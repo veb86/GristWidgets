@@ -8,7 +8,7 @@ echo Текущая папка: %cd%
 echo.
 
 REM Проверяем наличие Python
-C:\Users\veb\AppData\Local\Programs\Python\Python311\python.exe --version >nul 2>&1
+python\python.exe --version >nul 2>&1
 if errorlevel 1 (
     echo ОШИБКА: Python не найден!
     echo Установите Python с https://python.org
@@ -17,7 +17,7 @@ if errorlevel 1 (
 )
 
 REM Показываем версию Python
-C:\Users\veb\AppData\Local\Programs\Python\Python311\python.exe --version
+python\python.exe --version
 
 REM Проверяем наличие server.py
 if not exist "server.py" (
@@ -32,7 +32,7 @@ echo Запускаем server.py...
 echo.
 
 REM Запускаем сервер
-C:\Users\veb\AppData\Local\Programs\Python\Python311\python.exe server.py
+python\python.exe server.py
 
 echo.
 echo Сервер остановлен.
