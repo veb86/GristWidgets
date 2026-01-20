@@ -19,7 +19,7 @@ var ConfigModule = (function() {
   var DEFAULT_PARENT_FIELD = 'HeadDeviceName';
   var DEFAULT_FLAG_FIELD = 'icanbeheadunit';
   var DEFAULT_DISPLAY_FIELD = 'NMO_BaseName';
-  var DEFAULT_FLAG_VALUE = -1; // ИСПРАВЛЕНО: было 1, теперь -1
+  var DEFAULT_FLAG_VALUE = -1; // Значение флага для участия в иерархии (головные устройства)
 
   // ========================================
   // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ

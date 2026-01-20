@@ -61,7 +61,7 @@ var HierarchyModule = (function() {
   /**
    * Фильтровать записи по флагу участия в иерархии
    *
-   * ВАЖНО: Флаг должен быть равен -1 (не 1!)
+   * ВАЖНО: Флаг должен быть равен -1 для головных устройств
    * Это основное исправление по issue #5.
    *
    * @param {Array} records - Все записи
@@ -69,12 +69,16 @@ var HierarchyModule = (function() {
    * @returns {Array} Отфильтрованные записи
    */
   function filterRecordsByFlag(records, config) {
-    var flagValue = config.flagValue || -1;
+    var flagValue = config.flagValue || 0;
 
     return records.filter(function(record) {
       var recordFlagValue = record[config.flagField];
 
-      // ИСПРАВЛЕНО: Проверяем на -1, а не на 1
+      // Проверяем, что значение флага определено
+      if (recordFlagValue === undefined || recordFlagValue === null) {
+        return false;
+      }
+
       // Поддерживаем как число, так и строковое представление
       return recordFlagValue == flagValue || recordFlagValue === flagValue;
     });
