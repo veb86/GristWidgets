@@ -34,6 +34,13 @@
       <label>Поле отображения:</label>
       <input type="text" id="field-display" value="NMO_BaseName" placeholder="Оставьте пустым = ID">
     </div>
+    <div class="settings-row">
+      <label title="В настоящее время фильтрация применяется только к текущей таблице из-за ограничений Grist API">Целевая таблица для фильтрации:*:</label>
+      <select id="target-table" title="В настоящее время фильтрация применяется только к текущей таблице из-за ограничений Grist API">
+        <option value="">Текущая таблица</option>
+      </select>
+      <small>*Функция в разработке. В текущей версии Grist фильтрация применяется только к текущей таблице.</small>
+    </div>
   </div>
 
   <!-- Контейнер дерева -->

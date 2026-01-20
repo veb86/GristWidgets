@@ -75,7 +75,7 @@ var AppController = (function() {
     });
 
     // Изменение полей настроек
-    var settingsFields = '#field-id, #field-parent, #field-flag, #field-display';
+    var settingsFields = '#field-id, #field-parent, #field-flag, #field-display, #target-table';
     $(settingsFields).on('change', handleSettingsChange);
 
     // Обновление данных из Grist

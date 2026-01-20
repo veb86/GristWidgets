@@ -19,6 +19,7 @@ var ConfigModule = (function() {
   var DEFAULT_PARENT_FIELD = 'HeadDeviceName';
   var DEFAULT_FLAG_FIELD = 'icanbeheadunit';
   var DEFAULT_DISPLAY_FIELD = 'NMO_BaseName';
+  var DEFAULT_TARGET_TABLE = ''; // Пустое значение означает текущую таблицу
   var DEFAULT_FLAG_VALUE = -1; // Значение флага для участия в иерархии (головные устройства)
 
   // ========================================
@@ -33,6 +34,7 @@ var ConfigModule = (function() {
     parentField: DEFAULT_PARENT_FIELD,
     flagField: DEFAULT_FLAG_FIELD,
     displayField: DEFAULT_DISPLAY_FIELD,
+    targetTable: DEFAULT_TARGET_TABLE,
     flagValue: DEFAULT_FLAG_VALUE
   };
 
@@ -73,6 +75,7 @@ var ConfigModule = (function() {
     var parentField = $('#field-parent').val().trim();
     var flagField = $('#field-flag').val().trim();
     var displayField = $('#field-display').val().trim();
+    var targetTable = $('#target-table').val().trim();
 
     // Валидация обязательных полей
     if (idField) {
@@ -88,6 +91,9 @@ var ConfigModule = (function() {
     // Поле отображения может быть пустым (тогда используется idField)
     config.displayField = displayField || config.idField;
 
+    // Целевая таблица может быть пустой (тогда используется текущая таблица)
+    config.targetTable = targetTable;
+
     console.log('Конфигурация обновлена:', config);
   }
 
@@ -101,6 +107,7 @@ var ConfigModule = (function() {
     $('#field-parent').val(config.parentField);
     $('#field-flag').val(config.flagField);
     $('#field-display').val(config.displayField);
+    $('#target-table').val(config.targetTable);
   }
 
   /**
@@ -124,6 +131,7 @@ var ConfigModule = (function() {
     config.parentField = DEFAULT_PARENT_FIELD;
     config.flagField = DEFAULT_FLAG_FIELD;
     config.displayField = DEFAULT_DISPLAY_FIELD;
+    config.targetTable = DEFAULT_TARGET_TABLE;
     config.flagValue = DEFAULT_FLAG_VALUE;
 
     setInputsFromConfig();

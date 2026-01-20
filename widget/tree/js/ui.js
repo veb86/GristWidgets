@@ -229,6 +229,10 @@ var UIModule = (function() {
       return;
     }
 
+    // Получаем текущую конфигурацию для получения целевой таблицы
+    var config = ConfigModule.getConfig();
+    var targetTable = config.targetTable;
+
     // Получаем все ID для фильтрации (выбранный + все рекурсивные потомки)
     var allIds = [nodeId];
 
@@ -243,11 +247,12 @@ var UIModule = (function() {
     console.log('Применение фильтра:', {
       selected: nodeId,
       descendants: descendants,
-      total: allIds.length
+      total: allIds.length,
+      targetTable: targetTable || 'текущая таблица'
     });
 
-    // Отправляем фильтр в Grist
-    GristAPIModule.applyFilter(allIds).catch(function(err) {
+    // Отправляем фильтр в Grist с указанием целевой таблицы
+    GristAPIModule.applyFilter(allIds, targetTable).catch(function(err) {
       console.warn('Ошибка применения фильтра:', err);
     });
   }
