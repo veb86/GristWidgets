@@ -138,8 +138,7 @@ var AppController = (function() {
       var hierarchy = HierarchyModule.buildHierarchy(records, config);
 
       if (hierarchy.rootNodes.length === 0) {
-        var flagValue = ConfigModule.getFlagValue();
-        var message = 'Нет устройств с ' + config.flagField + ' = ' + flagValue;
+        var message = 'Нет устройств с ' + config.flagField + ' = true';
         UIModule.updateStatus(message);
         return;
       }

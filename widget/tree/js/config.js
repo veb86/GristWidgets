@@ -20,7 +20,7 @@ var ConfigModule = (function() {
   var DEFAULT_FLAG_FIELD = 'icanbeheadunit';
   var DEFAULT_DISPLAY_FIELD = 'NMO_BaseName';
   var DEFAULT_TARGET_TABLE = ''; // Пустое значение означает текущую таблицу
-  var DEFAULT_FLAG_VALUE = -1; // Значение флага для участия в иерархии (головные устройства)
+  var DEFAULT_FLAG_VALUE = true; // Значение флага для участия в иерархии (головные устройства) - теперь булевое
 
   // ========================================
   // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
@@ -141,7 +141,7 @@ var ConfigModule = (function() {
   /**
    * Получить значение флага для фильтрации
    *
-   * @returns {number} Значение флага (-1)
+   * @returns {boolean} Значение флага (true)
    */
   function getFlagValue() {
     return config.flagValue;
