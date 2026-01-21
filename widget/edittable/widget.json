@@ -1,0 +1,23 @@
+{
+  "name": "Edit Table Widget",
+  "description": "Виджет для редактирования данных выбранной таблицы в табличной форме",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "grist": {
+    "name": "Edit Table",
+    "url": "index.html",
+    "widgetId": "edittable",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full",
+    "fields": [
+      {
+        "name": "tableId",
+        "title": "Таблица",
+        "type": "string",
+        "description": "Выберите таблицу для редактирования"
+      }
+    ]
+  }
+}

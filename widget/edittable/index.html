@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Table Widget</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h3>Edit Table Widget</h3>
+
+        <div class="table-selector">
+            <label for="table-select" class="form-label"><strong>Select Table:</strong></label>
+            <select id="table-select" class="form-select">
+                <option value="">-- Loading tables... --</option>
+            </select>
+            <div class="form-text">Choose a table to edit its data</div>
+        </div>
+
+        <div id="status-message"></div>
+        <div id="table-container"></div>
+    </div>
+
+    <!-- Load Grist widget API -->
+    <script src="./grist-plugin-api.js"></script>
+    <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+
+    <!-- Application modules -->
+    <script src="./js/config.js"></script>
+    <script src="./js/grist-api.js"></script>
+    <script src="./js/table.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>
