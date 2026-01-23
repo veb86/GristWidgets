@@ -1,0 +1,67 @@
+/* Стили для виджета редактируемой таблицы */
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 10px;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.settings-panel {
+  background-color: #e9ecef;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  display: none; /* Скрыто по умолчанию */
+}
+
+.settings-row {
+  margin-bottom: 10px;
+}
+
+.settings-row label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.settings-row select,
+.settings-row input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+#table-container {
+  margin-top: 20px;
+}
+
+#editable-table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+#status {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.loading {
+  color: #007bff;
+}
+
+/* Стили для Tabledit */
+.tabledit-toolbar {
+  margin-bottom: 10px;
+}
+
+.tabledit-input {
+  width: 100%;
+}
