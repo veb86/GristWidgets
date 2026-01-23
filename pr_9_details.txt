@@ -1,0 +1,29 @@
+title:	[WIP] Создай новый виджет в папке edittable
+state:	DRAFT
+author:	konard
+labels:	
+assignees:	
+reviewers:	
+projects:	
+milestone:	
+number:	9
+url:	https://github.com/veb86/GristWidgets/pull/9
+additions:	0
+deletions:	0
+auto-merge:	disabled
+--
+## 🤖 AI-Powered Solution Draft
+
+This pull request is being automatically generated to solve issue veb86/GristWidgets#8.
+
+### 📋 Issue Reference
+Fixes veb86/GristWidgets#8
+
+### 🚧 Status
+**Work in Progress** - The AI assistant is currently analyzing and implementing the solution draft.
+
+### 📝 Implementation Details
+_Details will be added as the solution draft is developed..._
+
+---
+*This PR was created automatically by the AI issue solver*
