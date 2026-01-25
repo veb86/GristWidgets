@@ -46,3 +46,84 @@ body {
     text-align: center;
     padding: 20px;
 }
+
+.btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 2px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Стили для формульных столбцов */
+.formula-column-header {
+    background-color: #e3f2fd !important; /* Светло-синий фон заголовка */
+    color: #0d47a1 !important; /* Темно-синий текст */
+    font-weight: bold;
+}
+
+.formula-column-cell {
+    background-color: #e3f2fd !important; /* Светло-синий фон ячейки */
+    color: #0d47a1 !important; /* Темно-синий текст */
+    font-style: italic;
+}
+
+/* Стили для кнопки с предупреждением */
+.btn-warning {
+    color: #fff;
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}

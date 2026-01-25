@@ -1,0 +1,15 @@
+{
+  "name": "OneLineSchema",
+  "version": "1.0.0",
+  "description": "Визуализация однолинейных электрических схем",
+  "main": "index.html",
+  "gristPlugin": {
+    "type": "customWidget",
+    "widget": {
+      "name": "OneLineSchema",
+      "sections": ["single", "detail", "recordCard"],
+      "supportsManualResize": true,
+      "supportsManualColumnSelection": false
+    }
+  }
+}

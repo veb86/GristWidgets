@@ -17,6 +17,7 @@ var TableModule = (function() {
   let currentTableId = null;
   let currentRecords = [];
   let currentColumns = [];
+  let currentColumnMetadata = [];  // Метаданные столбцов, включая информацию о формулах
 
   // ========================================
   // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -118,6 +119,32 @@ var TableModule = (function() {
   }
 
   /**
+   * Установить метаданные столбцов
+   * @param {Array} metadata - Массив метаданных столбцов
+   */
+  function setCurrentColumnMetadata(metadata) {
+    currentColumnMetadata = metadata;
+  }
+
+  /**
+   * Получить метаданные столбцов
+   * @returns {Array} Массив метаданных столбцов
+   */
+  function getCurrentColumnMetadata() {
+    return currentColumnMetadata;
+  }
+
+  /**
+   * Проверить, является ли столбец формульным
+   * @param {string} columnName - Название столбца
+   * @returns {boolean} true, если столбец формульный
+   */
+  function isColumnFormula(columnName) {
+    const columnMeta = currentColumnMetadata.find(meta => meta.colId === columnName);
+    return columnMeta ? Boolean(columnMeta.isFormula) : false;
+  }
+
+  /**
    * Обновить локальную запись
    * @param {number} rowId - ID строки
    * @param {string} fieldName - Название поля
@@ -142,6 +169,9 @@ var TableModule = (function() {
     getCurrentRecords: getCurrentRecords,
     setCurrentColumns: setCurrentColumns,
     getCurrentColumns: getCurrentColumns,
+    setCurrentColumnMetadata: setCurrentColumnMetadata,
+    getCurrentColumnMetadata: getCurrentColumnMetadata,
+    isColumnFormula: isColumnFormula,
     transformTableData: transformTableData,
     updateLocalRecord: updateLocalRecord,
     escapeHtml: escapeHtml
