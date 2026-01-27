@@ -19,3 +19,16 @@
  - для понимание как работает версия Desktop: https://github.com/gristlabs/grist-desktop
  - Для понимания внутренних процессов внутри ядра: https://github.com/gristlabs/grist-core/
  - что бы посмотреть образцы как делают widgets: https://github.com/gristlabs/grist-widget
+
+---
+
+Issue to solve: https://github.com/veb86/GristWidgets/issues/10
+Your prepared branch: issue-10-115dcc09e646
+Your prepared working directory: /tmp/gh-issue-solver-1769530938831
+Your forked repository: konard/veb86-GristWidgets
+Original repository (upstream): veb86/GristWidgets
+
+Proceed.
+
+
+Run timestamp: 2026-01-27T16:22:27.169Z
