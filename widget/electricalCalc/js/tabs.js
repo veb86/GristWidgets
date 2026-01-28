@@ -1,6 +1,7 @@
 /**
  * Модуль управления вкладками для виджета-органайзера electricalCalc
  * Отвечает за переключение между вкладками в правой панели
+ * Обновлен для работы с Web Components вместо iframe
  */
 
 // Класс для управления системой вкладок
@@ -31,10 +32,10 @@ class TabManager {
 
         // Определяем активную вкладку при загрузке
         this.activeTab = document.querySelector('.tab-btn.active');
-        
+
         // Добавляем обработку клавиатурной навигации
         this.initKeyboardNavigation();
-        
+
         console.log('Система вкладок инициализирована');
     }
 
@@ -45,7 +46,7 @@ class TabManager {
     switchTab(clickedButton) {
         // Получаем идентификатор вкладки из data-атрибута
         const tabId = clickedButton.dataset.tab;
-        
+
         if (!tabId) {
             console.warn('Кнопка вкладки не имеет data-tab атрибута');
             return;
@@ -63,7 +64,7 @@ class TabManager {
         if (targetPane) {
             targetPane.classList.add('active');
             this.activeTab = clickedButton;
-            
+
             // Вызываем событие переключения вкладки
             this.onTabSwitch(tabId, targetPane);
         } else {
@@ -77,37 +78,15 @@ class TabManager {
      * @param {HTMLElement} pane - Элемент панели
      */
     onTabSwitch(tabId, pane) {
-        // Проверяем, есть ли iframe в активной панели
-        const iframe = pane.querySelector('iframe');
-        if (iframe) {
-            // Небольшая задержка для корректного отображения
-            setTimeout(() => {
-                // Пытаемся обновить iframe если нужно
-                this.refreshIframe(iframe);
-            }, 100);
+        // Для Web Components не требуется специальная обработка
+        // Компоненты уже находятся в DOM и готовы к работе
+
+        // Отправляем событие о переключении вкладки через AppHost
+        if (window.AppHost) {
+            window.AppHost.sendEvent('tab-switched', { tabId, paneId: pane.id });
         }
 
         console.log(`Переключились на вкладку: ${tabId}`);
-    }
-
-    /**
-     * Обновление iframe при необходимости
-     * @param {HTMLIFrameElement} iframe - Элемент iframe для обновления
-     */
-    refreshIframe(iframe) {
-        // Проверяем, загружен ли iframe
-        try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            if (!iframeDoc || iframeDoc.readyState === 'loading') {
-                // Если iframe еще загружается, ждем
-                iframe.addEventListener('load', () => {
-                    console.log('Iframe загружен');
-                });
-            }
-        } catch (e) {
-            // Ошибка доступа к iframe (междоменные ограничения)
-            console.log('Доступ к iframe ограничен (это нормально)');
-        }
     }
 
     /**
@@ -119,7 +98,7 @@ class TabManager {
             // Переключение вкладок по Ctrl+Tab и Ctrl+Shift+Tab
             if (e.ctrlKey && e.key === 'Tab') {
                 e.preventDefault();
-                
+
                 if (e.shiftKey) {
                     this.switchToPreviousTab();
                 } else {
@@ -128,7 +107,7 @@ class TabManager {
             }
 
             // Активация вкладки по Enter или Space когда кнопка в фокусе
-            if (e.target.classList.contains('tab-btn') && 
+            if (e.target.classList.contains('tab-btn') &&
                 (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
                 this.switchTab(e.target);
@@ -150,7 +129,7 @@ class TabManager {
      */
     switchToPreviousTab() {
         const currentIndex = Array.from(this.tabButtons).indexOf(this.activeTab);
-        const prevIndex = currentIndex === 0 ? 
+        const prevIndex = currentIndex === 0 ?
             this.tabButtons.length - 1 : currentIndex - 1;
         this.switchTab(this.tabButtons[prevIndex]);
     }
@@ -176,8 +155,8 @@ class TabManager {
 document.addEventListener('DOMContentLoaded', () => {
     // Создаем экземпляр менеджера вкладок
     window.tabManager = new TabManager();
-    
-    console.log('Виджет-органайзер electricalCalc загружен');
+
+    console.log('Виджет-органайзер electricalCalc (Web Components) загружен');
 });
 
 // Обработка ошибок загрузки

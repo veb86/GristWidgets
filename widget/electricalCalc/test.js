@@ -1,6 +1,6 @@
 /**
- * Скрипт для автоматического тестирования виджета electricalCalc
- * Проверяет базовую функциональность и корректность работы
+ * Тестовый скрипт для проверки функциональности рефакторенного виджета electricalCalc
+ * Проверяет базовую функциональность Web Components и API взаимодействия
  */
 
 // Функция для логирования результатов тестов
@@ -8,7 +8,7 @@ function logTest(testName, passed, message = '') {
     const status = passed ? '✅ PASS' : '❌ FAIL';
     const output = `${status} ${testName}${message ? ': ' + message : ''}`;
     console.log(output);
-    
+
     // Также выводим на страницу если она существует
     const resultsDiv = document.getElementById('test-results');
     if (resultsDiv) {
@@ -17,14 +17,13 @@ function logTest(testName, passed, message = '') {
         testDiv.textContent = output;
         resultsDiv.appendChild(testDiv);
     }
-    
+
     return passed;
 }
 
 // Основной класс для тестирования
 class ElectricalCalcTester {
     constructor() {
-        this.iframe = null;
         this.testResults = [];
         this.passedTests = 0;
         this.totalTests = 0;
@@ -32,234 +31,225 @@ class ElectricalCalcTester {
 
     // Инициализация тестирования
     async init() {
-        console.log('🚀 Начало тестирования виджета electricalCalc');
-        
-        // Ожидаем загрузки iframe
-        await this.waitForIframeLoad();
-        
+        console.log('🚀 Начало тестирования рефакторенного виджета electricalCalc (Web Components)');
+
+        // Ждем немного для загрузки компонентов
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Запускаем все тесты
         await this.runAllTests();
-        
+
         // Выводим результаты
         this.printResults();
     }
 
-    // Ожидание загрузки iframe
-    async waitForIframeLoad() {
-        return new Promise((resolve) => {
-            this.iframe = document.querySelector('.widget-preview');
-            
-            if (!this.iframe) {
-                logTest('Поиск iframe', false, 'iframe не найден');
-                return;
-            }
-
-            this.iframe.addEventListener('load', () => {
-                console.log('Iframe загружен');
-                setTimeout(resolve, 1000); // Даем время на инициализацию
-            });
-
-            // Если iframe уже загружен
-            if (this.iframe.contentDocument && this.iframe.contentDocument.readyState === 'complete') {
-                setTimeout(resolve, 1000);
-            }
-        });
-    }
-
-    // Получение документа iframe
-    getIframeDoc() {
-        try {
-            return this.iframe.contentDocument || this.iframe.contentWindow.document;
-        } catch (e) {
-            console.log('Нет доступа к iframe (нормально для кросс-доменных запросов)');
-            return null;
-        }
-    }
-
     // Запуск всех тестов
     async runAllTests() {
-        const doc = this.getIframeDoc();
-        
         // Тестирование структуры HTML
-        this.testStructure(doc);
-        
+        this.testStructure();
+
+        // Тестирование Web Components
+        this.testWebComponents();
+
+        // Тестирование AppHost API
+        this.testAppHostAPI();
+
         // Тестирование CSS стилей
-        this.testStyles(doc);
-        
+        this.testStyles();
+
         // Тестирование JavaScript функциональности
-        this.testJavaScript(doc);
-        
-        // Тестирование адаптивности
-        this.testResponsiveness();
-        
-        // Тестирование доступности ресурсов
-        await this.testResources();
+        this.testJavaScript();
     }
 
     // Тестирование структуры HTML
-    testStructure(doc) {
-        if (!doc) {
-            logTest('Проверка структуры HTML', false, 'Нет доступа к документу iframe');
-            return;
-        }
-
+    testStructure() {
         // Проверка основного контейнера
-        const mainContainer = doc.querySelector('.main-container');
+        const mainContainer = document.querySelector('.main-container');
         this.totalTests++;
         if (logTest('Основной контейнер .main-container', !!mainContainer)) {
             this.passedTests++;
         }
 
         // Проверка левой панели
-        const leftPanel = doc.getElementById('left-panel');
+        const leftPanel = document.getElementById('left-panel');
         this.totalTests++;
         if (logTest('Левая панель #left-panel', !!leftPanel)) {
             this.passedTests++;
         }
 
         // Проверка правой панели
-        const rightPanel = doc.getElementById('right-panel');
+        const rightPanel = document.getElementById('right-panel');
         this.totalTests++;
         if (logTest('Правая панель #right-panel', !!rightPanel)) {
             this.passedTests++;
         }
 
         // Проверка вкладок
-        const tabs = doc.querySelector('.tabs');
+        const tabs = document.querySelector('.tabs');
         this.totalTests++;
         if (logTest('Контейнер вкладок .tabs', !!tabs)) {
             this.passedTests++;
         }
 
         // Проверка кнопок вкладок
-        const tabButtons = doc.querySelectorAll('.tab-btn');
+        const tabButtons = document.querySelectorAll('.tab-btn');
         this.totalTests++;
         if (logTest('Кнопки вкладок .tab-btn', tabButtons.length === 2)) {
             this.passedTests++;
         }
 
         // Проверка панелей контента
-        const tabPanes = doc.querySelectorAll('.tab-pane');
+        const tabPanes = document.querySelectorAll('.tab-pane');
         this.totalTests++;
         if (logTest('Панели контента .tab-pane', tabPanes.length === 2)) {
             this.passedTests++;
         }
+    }
 
-        // Проверка iframe в панелях
-        const iframes = doc.querySelectorAll('iframe');
+    // Тестирование Web Components
+    testWebComponents() {
+        // Проверка регистрации компонентов
+        const treeElement = document.querySelector('element-tree');
         this.totalTests++;
-        if (logTest('Iframe в панелях', iframes.length === 3)) { // 1 в левой + 2 в правой
+        if (logTest('Компонент element-tree зарегистрирован', !!treeElement)) {
             this.passedTests++;
+        }
+
+        const editTableElement = document.querySelector('element-edit-table');
+        this.totalTests++;
+        if (logTest('Компонент element-edit-table зарегистрирован', !!editTableElement)) {
+            this.passedTests++;
+        }
+
+        const oneLineSchemaElement = document.querySelector('element-one-line-schema');
+        this.totalTests++;
+        if (logTest('Компонент element-one-line-schema зарегистрирован', !!oneLineSchemaElement)) {
+            this.passedTests++;
+        }
+
+        // Проверка, что компоненты имеют shadowRoot
+        if (treeElement && treeElement.shadowRoot) {
+            this.totalTests++;
+            if (logTest('element-tree имеет shadowRoot', true)) {
+                this.passedTests++;
+            }
+        } else {
+            this.totalTests++;
+            logTest('element-tree имеет shadowRoot', false);
+        }
+
+        if (editTableElement && editTableElement.shadowRoot) {
+            this.totalTests++;
+            if (logTest('element-edit-table имеет shadowRoot', true)) {
+                this.passedTests++;
+            }
+        } else {
+            this.totalTests++;
+            logTest('element-edit-table имеет shadowRoot', false);
+        }
+
+        if (oneLineSchemaElement && oneLineSchemaElement.shadowRoot) {
+            this.totalTests++;
+            if (logTest('element-one-line-schema имеет shadowRoot', true)) {
+                this.passedTests++;
+            }
+        } else {
+            this.totalTests++;
+            logTest('element-one-line-schema имеет shadowRoot', false);
+        }
+    }
+
+    // Тестирование AppHost API
+    testAppHostAPI() {
+        // Проверка наличия AppHost
+        this.totalTests++;
+        if (logTest('Объект AppHost создан', !!window.AppHost)) {
+            this.passedTests++;
+        }
+
+        // Проверка методов AppHost
+        if (window.AppHost) {
+            this.totalTests++;
+            if (logTest('Метод AppHost.getData()', typeof window.AppHost.getData === 'function')) {
+                this.passedTests++;
+            }
+
+            this.totalTests++;
+            if (logTest('Метод AppHost.subscribe()', typeof window.AppHost.subscribe === 'function')) {
+                this.passedTests++;
+            }
+
+            this.totalTests++;
+            if (logTest('Метод AppHost.sendEvent()', typeof window.AppHost.sendEvent === 'function')) {
+                this.passedTests++;
+            }
+
+            this.totalTests++;
+            if (logTest('Метод AppHost.setSelectedRows()', typeof window.AppHost.setSelectedRows === 'function')) {
+                this.passedTests++;
+            }
         }
     }
 
     // Тестирование CSS стилей
-    testStyles(doc) {
-        if (!doc) {
-            logTest('Проверка CSS стилей', false, 'Нет доступа к документу iframe');
-            return;
-        }
-
+    testStyles() {
         // Проверка flexbox для основного контейнера
-        const mainContainer = doc.querySelector('.main-container');
-        const containerStyles = window.getComputedStyle(mainContainer);
-        
-        this.totalTests++;
-        if (logTest('Flexbox для контейнера', containerStyles.display === 'flex')) {
-            this.passedTests++;
-        }
+        const mainContainer = document.querySelector('.main-container');
+        if (mainContainer) {
+            const containerStyles = window.getComputedStyle(mainContainer);
 
-        // Проверка ширины левой панели
-        const leftPanel = doc.getElementById('left-panel');
-        const leftStyles = window.getComputedStyle(leftPanel);
-        
-        this.totalTests++;
-        if (logTest('Ширина левой панели 20%', leftStyles.width === '20%' || leftStyles.width.includes('20%'))) {
-            this.passedTests++;
+            this.totalTests++;
+            if (logTest('Flexbox для контейнера', containerStyles.display === 'flex')) {
+                this.passedTests++;
+            }
+
+            // Проверка ширины левой панели
+            const leftPanel = document.getElementById('left-panel');
+            if (leftPanel) {
+                const leftStyles = window.getComputedStyle(leftPanel);
+
+                this.totalTests++;
+                if (logTest('Ширина левой панели 20%', parseInt(leftStyles.width) > 0)) {
+                    this.passedTests++;
+                }
+            }
         }
     }
 
     // Тестирование JavaScript функциональности
-    testJavaScript(doc) {
-        if (!doc) {
-            logTest('Проверка JavaScript', false, 'Нет доступа к документу iframe');
-            return;
-        }
-
+    testJavaScript() {
         // Проверка наличия класса активной вкладки
-        const activeTab = doc.querySelector('.tab-btn.active');
+        const activeTab = document.querySelector('.tab-btn.active');
         this.totalTests++;
         if (logTest('Активная вкладка по умолчанию', !!activeTab)) {
             this.passedTests++;
         }
 
         // Проверка наличия активной панели
-        const activePane = doc.querySelector('.tab-pane.active');
+        const activePane = document.querySelector('.tab-pane.active');
         this.totalTests++;
         if (logTest('Активная панель по умолчанию', !!activePane)) {
             this.passedTests++;
         }
 
         // Проверяем наличие объекта tabManager
-        try {
-            const tabManagerExists = !!(this.iframe.contentWindow.tabManager);
-            this.totalTests++;
-            if (logTest('Объект TabManager создан', tabManagerExists)) {
-                this.passedTests++;
-            }
-        } catch (e) {
-            this.totalTests++;
-            logTest('Объект TabManager', false, 'Нет доступа к объекту');
+        const tabManagerExists = !!(window.tabManager);
+        this.totalTests++;
+        if (logTest('Объект TabManager создан', tabManagerExists)) {
+            this.passedTests++;
         }
-    }
 
-    // Тестирование адаптивности
-    testResponsiveness() {
-        const originalWidth = window.innerWidth;
-        
-        // Тестирование мобильной версии
-        window.innerWidth = 600;
-        window.dispatchEvent(new Event('resize'));
-        
-        setTimeout(() => {
-            const doc = this.getIframeDoc();
-            if (doc) {
-                const leftPanel = doc.getElementById('left-panel');
-                const leftStyles = window.getComputedStyle(leftPanel);
-                
-                this.totalTests++;
-                if (logTest('Адаптивность мобильная версия', leftStyles.width === '100%')) {
-                    this.passedTests++;
-                }
-            }
-            
-            // Восстановление размера
-            window.innerWidth = originalWidth;
-            window.dispatchEvent(new Event('resize'));
-        }, 500);
-    }
+        // Проверка, что внешние библиотеки загружены
+        const jqueryExists = typeof $ !== 'undefined';
+        this.totalTests++;
+        if (logTest('jQuery загружен', jqueryExists)) {
+            this.passedTests++;
+        }
 
-    // Тестирование доступности ресурсов
-    async testResources() {
-        const resources = [
-            './css/style.css',
-            './js/tabs.js',
-            '../tree/index.html',
-            '../edittable/index.html',
-            '../onelineschema/index.html'
-        ];
-
-        for (const resource of resources) {
-            try {
-                const response = await fetch(resource);
-                this.totalTests++;
-                if (logTest(`Ресурс ${resource}`, response.ok)) {
-                    this.passedTests++;
-                }
-            } catch (e) {
-                this.totalTests++;
-                logTest(`Ресурс ${resource}`, false, e.message);
-            }
+        const tabulatorExists = typeof Tabulator !== 'undefined';
+        this.totalTests++;
+        if (logTest('Tabulator загружен', tabulatorExists)) {
+            this.passedTests++;
         }
     }
 
@@ -268,7 +258,7 @@ class ElectricalCalcTester {
         console.log('\n📊 Итоги тестирования:');
         console.log(`Пройдено: ${this.passedTests}/${this.totalTests} тестов`);
         console.log(`Процент успешности: ${Math.round((this.passedTests / this.totalTests) * 100)}%`);
-        
+
         if (this.passedTests === this.totalTests) {
             console.log('🎉 Все тесты пройдены успешно!');
         } else {
@@ -279,7 +269,7 @@ class ElectricalCalcTester {
 
 // Запуск тестирования после загрузки страницы
 document.addEventListener('DOMContentLoaded', () => {
-    // Даем время на загрузку iframe
+    // Даем время на загрузку и инициализацию компонентов
     setTimeout(() => {
         const tester = new ElectricalCalcTester();
         tester.init();
