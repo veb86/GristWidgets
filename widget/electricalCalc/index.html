@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виджет-органайзер electricalCalc</title>
+    <!-- Подключение стилей для виджета-органайзера -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <!-- Основной контейнер с flexbox-версткой для разделения экрана -->
+    <!-- Делит интерфейс на левую панель (20%) и правую панель (80%) -->
+    <div class="main-container">
+        
+        <!-- Левая панель (20%) - навигационное дерево устройств -->
+        <!-- Загружает виджет tree через iframe для полной функциональной независимости -->
+        <div id="left-panel">
+            <iframe src="../tree/index.html" title="Навигационное дерево"></iframe>
+        </div>
+        
+        <!-- Правая панель (80%) - рабочая область с вкладками -->
+        <!-- Содержит переключаемые вкладки с разными виджетами -->
+        <div id="right-panel">
+            
+            <!-- Система вкладок для переключения между виджетами -->
+            <!-- Каждая вкладка загружает отдельный виджет через iframe -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="tab-edittable">Таблица</button>
+                <button class="tab-btn" data-tab="tab-onelineschema">Однолинейная схема</button>
+            </div>
+            
+            <!-- Контент вкладок - здесь размещаются iframe с виджетами -->
+            <!-- Только одна панель активна в каждый момент времени -->
+            <div class="tab-content">
+                <!-- Панель с виджетом редактирования таблиц -->
+                <!-- Активна по умолчанию при загрузке страницы -->
+                <div class="tab-pane active" id="tab-edittable">
+                    <iframe src="../edittable/index.html" title="Редактор таблиц"></iframe>
+                </div>
+                
+                <!-- Панель с виджетом визуализации однолинейных схем -->
+                <!-- Скрыта по умолчанию, активируется при переключении вкладки -->
+                <div class="tab-pane" id="tab-onelineschema">
+                    <iframe src="../onelineschema/index.html" title="Однолинейная схема"></iframe>
+                </div>
+            </div>
+            
+        </div>
+        
+    </div>
+
+    <!-- Модуль управления вкладками - обеспечивает переключение между вкладками -->
+    <!-- Реализует всю логику работы с таб-интерфейсом -->
+    <script src="./js/tabs.js"></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест виджета electricalCalc</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #0078d7;
+            padding-bottom: 15px;
+        }
+        .widget-preview {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .test-info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .test-checklist {
+            background-color: #f0f8f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .check-item {
+            margin: 5px 0;
+            padding: 5px 0;
+        }
+        .check-item::before {
+            content: "☐ ";
+            color: #666;
+        }
+        .check-item.passed::before {
+            content: "☑ ";
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>Тест виджета-органайзера electricalCalc</h1>
+            <p>Проверка функциональности и корректности работы</p>
+        </div>
+        
+        <div class="test-info">
+            <h3>Информация о тесте:</h3>
+            <p><strong>URL виджета:</strong> <code>widget/electricalCalc/index.html</code></p>
+            <p><strong>Локальный сервер:</strong> <code>http://127.0.0.1:8080</code></p>
+            <p><strong>Тестируемые компоненты:</strong></p>
+            <ul>
+                <li>Загрузка tree виджета в левой панели</li>
+                <li>Загрузка edittable виджета в первой вкладке</li>
+                <li>Загрузка onelineschema виджета во второй вкладке</li>
+                <li>Переключение между вкладками</li>
+                <li>Адаптивность интерфейса</li>
+            </ul>
+        </div>
+        
+        <div class="test-checklist">
+            <h3>Чек-лист проверки:</h3>
+            <div class="check-item">Интерфейс разделен на левую (20%) и правую (80%) панели</div>
+            <div class="check-item">Левая панель загружает tree виджет</div>
+            <div class="check-item">Правая панель содержит систему вкладок</div>
+            <div class="check-item">Первая вкладка "Таблица" активна по умолчанию</div>
+            <div class="check-item">Вторая вкладка "Однолинейная схема" доступна</div>
+            <div class="check-item">Переключение вкладок работает корректно</div>
+            <div class="check-item">Все iframe загружаются без ошибок</div>
+            <div class="check-item">Интерфейс адаптируется под размер экрана</div>
+            <div class="check-item">JavaScript консоль не содержит ошибок</div>
+        </div>
+        
+        <div id="test-results" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin: 20px 0; font-family: monospace; white-space: pre-line;"></div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="runManualTest()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                Запустить автоматическое тестирование
+            </button>
+            <button onclick="window.open('widget/electricalCalc/index.html', '_blank')" style="padding: 10px 20px; background: #0078d7; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Открыть в новом окне
+            </button>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <iframe src="widget/electricalCalc/index.html" class="widget-preview" title="Предпросмотр виджета electricalCalc"></iframe>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="window.open('widget/electricalCalc/index.html', '_blank')" style="padding: 10px 20px; background: #0078d7; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Открыть в новом окне
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Функция для запуска ручного тестирования
+        function runManualTest() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<strong>🔄 Запуск автоматического тестирования...</strong>\n';
+            
+            // Загружаем и выполняем скрипт тестирования
+            const script = document.createElement('script');
+            script.src = 'widget/electricalCalc/test.js';
+            script.onload = function() {
+                console.log('Скрипт тестирования загружен');
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Простая функция для автоматической проверки элементов
+        setTimeout(function() {
+            const iframe = document.querySelector('.widget-preview');
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                console.log('Iframe загружен успешно');
+                
+                // Проверяем наличие основных элементов
+                const leftPanel = iframeDoc.getElementById('left-panel');
+                const rightPanel = iframeDoc.getElementById('right-panel');
+                const tabs = iframeDoc.querySelector('.tabs');
+                const tabButtons = iframeDoc.querySelectorAll('.tab-btn');
+                
+                console.log('Проверка элементов:', {
+                    leftPanel: !!leftPanel,
+                    rightPanel: !!rightPanel,
+                    tabs: !!tabs,
+                    tabButtons: tabButtons.length
+                });
+            } catch (e) {
+                console.log('Доступ к iframe ограничен (это нормально для кросс-доменных запросов)');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

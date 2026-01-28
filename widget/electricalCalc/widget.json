@@ -1,0 +1,52 @@
+{
+  "name": "ElectricalCalc Organizer",
+  "description": "Виджет-органайзер для одновременной работы с несколькими electrical виджетами",
+  "version": "1.0.0",
+  "author": "GristWidgets Community",
+  "main": "index.html",
+  "gristPlugin": {
+    "type": "customWidget",
+    "widget": {
+      "name": "ElectricalCalc Organizer",
+      "sections": ["single", "detail", "recordCard"],
+      "supportsManualResize": true,
+      "supportsManualColumnSelection": false,
+      "description": "Органайзер для работы с деревом устройств, таблицами и однолинейными схемами"
+    }
+  },
+  "features": {
+    "containsMultipleWidgets": true,
+    "layout": {
+      "type": "flexbox",
+      "leftPanel": "navigationTree",
+      "rightPanel": "tabbedContent"
+    },
+    "embeddedWidgets": [
+      {
+        "name": "Tree",
+        "path": "../tree/index.html",
+        "position": "leftPanel"
+      },
+      {
+        "name": "EditTable",
+        "path": "../edittable/index.html",
+        "position": "tab1",
+        "tabTitle": "Таблица"
+      },
+      {
+        "name": "OneLineSchema",
+        "path": "../onelineschema/index.html",
+        "position": "tab2",
+        "tabTitle": "Однолинейная схема"
+      }
+    ]
+  },
+  "dependencies": {
+    "css": ["./css/style.css"],
+    "js": ["./js/tabs.js"]
+  },
+  "compatibility": {
+    "gristVersion": ">=1.0.0",
+    "browsers": ["Chrome", "Firefox", "Safari", "Edge"]
+  }
+}
