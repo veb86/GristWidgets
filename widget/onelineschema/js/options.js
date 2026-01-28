@@ -13,6 +13,12 @@ if (window.grist && grist.widget) {
     supportsManualResize: true,
     options: [
       {
+        name: "table",
+        title: "Таблица данных",
+        type: "string",
+        defaultValue: "schema"
+      },
+      {
         name: "layout",
         title: "Расположение",
         type: "string",

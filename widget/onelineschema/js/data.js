@@ -106,6 +106,37 @@ var DataModule = (function() {
   }
 
   /**
+   * Проверить существование таблицы
+   * @param {string} tableName - Название таблицы для проверки
+   * @returns {Promise<boolean>} Существует ли таблица
+   */
+  async function checkTableExists(tableName) {
+    try {
+      await grist.docApi.fetchTable(tableName);
+      return true;
+    } catch (error) {
+      if (error.message && error.message.includes('KeyError')) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Получить список доступных таблиц
+   * @returns {Promise<Array>} Массив имен таблиц
+   */
+  async function getAvailableTables() {
+    try {
+      const tables = await grist.docApi.listTables();
+      return tables.map(table => table.id);
+    } catch (error) {
+      console.error('Ошибка получения списка таблиц:', error);
+      return [];
+    }
+  }
+
+  /**
    * Загрузить данные из Grist
    * @param {string} tableName - Название таблицы для загрузки
    * @returns {Promise<Object>} Объект с преобразованными данными
@@ -113,6 +144,16 @@ var DataModule = (function() {
   async function loadData(tableName) {
     try {
       console.log('Загрузка данных из таблицы:', tableName);
+
+      if (!tableName) {
+        throw new Error('Имя таблицы не указано');
+      }
+
+      // Проверяем существование таблицы
+      const tableExists = await checkTableExists(tableName);
+      if (!tableExists) {
+        throw new Error(`Таблица "${tableName}" не найдена. Доступные таблицы: ${(await getAvailableTables()).join(', ')}`);
+      }
 
       // Загружаем данные из Grist по имени таблицы (Grist API поддерживает имена таблиц)
       const tableData = await grist.docApi.fetchTable(tableName);
@@ -143,6 +184,8 @@ var DataModule = (function() {
     setCurrentData: setCurrentData,
     getCurrentData: getCurrentData,
     loadData: loadData,
-    transformData: transformData
+    transformData: transformData,
+    checkTableExists: checkTableExists,
+    getAvailableTables: getAvailableTables
   };
 })();

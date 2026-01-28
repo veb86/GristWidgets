@@ -21,15 +21,23 @@ var AppModule = (function() {
   // ========================================
 
   /**
+   * Получить имя таблицы из конфигурации или использовать значение по умолчанию
+   */
+  function getTableName() {
+    const config = ConfigModule.getConfig();
+    return config.table || 'schema';
+  }
+
+  /**
    * Обновить схему на основе текущих данных
    */
   async function updateSchema() {
-    const tableName = 'schema'; // Фиксированное имя таблицы
+    const tableName = getTableName();
 
     try {
       const config = ConfigModule.getConfig();
 
-      // Загружаем данные из фиксированной таблицы
+      // Загружаем данные из указанной таблицы
       const data = await DataModule.loadData(tableName);
 
       // Отрисовываем схему
@@ -39,6 +47,20 @@ var AppModule = (function() {
     } catch (error) {
       console.error('Ошибка обновления схемы:', error);
       UIModule.showStatusMessage(`Ошибка обновления схемы: ${error.message}`, 'error');
+      
+      // Если таблица не найдена, показываем доступные таблицы
+      if (error.message.includes('не найдена')) {
+        try {
+          const availableTables = await DataModule.getAvailableTables();
+          if (availableTables.length > 0) {
+            UIModule.showStatusMessage(`Доступные таблицы: ${availableTables.join(', ')}`, 'info');
+          } else {
+            UIModule.showStatusMessage('В документе нет таблиц для отображения', 'warning');
+          }
+        } catch (listError) {
+          console.error('Ошибка получения списка таблиц:', listError);
+        }
+      }
     }
   }
 

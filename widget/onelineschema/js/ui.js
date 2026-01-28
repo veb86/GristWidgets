@@ -80,17 +80,15 @@ var UIModule = (function(DataModule, SchemaModule, ConfigModule) {
   }
 
   /**
-   * Загрузить и отобразить схему для фиксированной таблицы
+   * Загрузить и отобразить схему для выбранной таблицы
    */
   async function loadAndDisplaySchema() {
-    const tableName = 'schema'; // Фиксированное имя таблицы
+    const config = ConfigModule.getConfig();
+    const tableName = config.table || 'schema';
 
     try {
       // Загружаем данные из указанной таблицы
       const data = await DataModule.loadData(tableName);
-
-      // Получаем текущую конфигурацию
-      const config = ConfigModule.getConfig();
 
       // Отрисовываем схему
       SchemaModule.drawSchema(data, config);
@@ -99,6 +97,20 @@ var UIModule = (function(DataModule, SchemaModule, ConfigModule) {
     } catch (error) {
       console.error('Ошибка загрузки и отображения схемы:', error);
       showStatusMessage(`Ошибка загрузки схемы: ${error.message}`, 'error');
+      
+      // Если таблица не найдена, показываем доступные таблицы
+      if (error.message.includes('не найдена')) {
+        try {
+          const availableTables = await DataModule.getAvailableTables();
+          if (availableTables.length > 0) {
+            showStatusMessage(`Доступные таблицы: ${availableTables.join(', ')}`, 'info');
+          } else {
+            showStatusMessage('В документе нет таблиц для отображения', 'warning');
+          }
+        } catch (listError) {
+          console.error('Ошибка получения списка таблиц:', listError);
+        }
+      }
     }
   }
 

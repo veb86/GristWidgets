@@ -18,7 +18,7 @@ var ConfigModule = (function() {
   var DEFAULT_LAYOUT = 'vertical'; // 'vertical' или 'horizontal'
   var DEFAULT_SCALE = 1.0;
   var DEFAULT_GROUP_BY_FEEDER = true;
-  var DEFAULT_TABLE = '';
+  var DEFAULT_TABLE = 'schema';
 
   // ========================================
   // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
@@ -30,14 +30,16 @@ var ConfigModule = (function() {
   var config = {
     layout: DEFAULT_LAYOUT,
     scale: DEFAULT_SCALE,
-    groupByFeeder: DEFAULT_GROUP_BY_FEEDER
+    groupByFeeder: DEFAULT_GROUP_BY_FEEDER,
+    table: DEFAULT_TABLE
   };
 
   // Значения по умолчанию для настроек
   var defaultOptions = {
     layout: DEFAULT_LAYOUT,
     groupByFeeder: DEFAULT_GROUP_BY_FEEDER,
-    scale: DEFAULT_SCALE
+    scale: DEFAULT_SCALE,
+    table: DEFAULT_TABLE
   };
 
   // ========================================
@@ -73,7 +75,7 @@ var ConfigModule = (function() {
    * @param {*} value - Новое значение
    */
   function setConfigValue(fieldName, value) {
-    if (config.hasOwnProperty(fieldName) && fieldName !== 'table') {
+    if (config.hasOwnProperty(fieldName)) {
       config[fieldName] = value;
       console.log('Поле конфигурации обновлено:', fieldName, '=', value);
     }
@@ -87,7 +89,7 @@ var ConfigModule = (function() {
     if (newConfig && typeof newConfig === 'object') {
       // Обновляем только те поля, которые существуют в нашей конфигурации
       Object.keys(config).forEach(function(key) {
-        if (newConfig.hasOwnProperty(key) && key !== 'table') { // Игнорируем поле table
+        if (newConfig.hasOwnProperty(key)) {
           config[key] = newConfig[key];
         }
       });
