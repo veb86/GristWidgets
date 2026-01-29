@@ -1,0 +1,84 @@
+/* Основные стили для виджета-органайзера test123 */
+
+/* Сброс стилей и базовая разметка */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Основной контейнер с flexbox-версткой */
+.main-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Левая колонка (50%) - виджет table1 */
+#left-column {
+    width: 50%;
+    border-right: 1px solid #ccc;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+/* Правая колонка (50%) - виджет table2 */
+#right-column {
+    width: 50%;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+/* Заголовки для колонок */
+.column h4 {
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Стили для iframe с виджетами */
+iframe {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+
+    #left-column {
+        width: 100%;
+        height: 50%;
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+    }
+
+    #right-column {
+        width: 100%;
+        height: 50%;
+    }
+}
+
+/* Улучшение визуального разделения */
+@media (min-width: 1200px) {
+    #left-column {
+        width: 50%;
+    }
+
+    #right-column {
+        width: 50%;
+    }
+}
