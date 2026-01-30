@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:lc="https://librecad.org" xmlns:xlink="http://www.w3.org/1999/xlink" width="2in" height="5in" viewBox="0 0 2 5">
+    <g lc:layername="!VSCHEMES" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="0.1">
+        <path d="M0,0 L2,0 L2,5 L0,5 L0,0 Z "/>
+    </g>
+    <g lc:layername="0" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="0.1"/>
+    <g lc:layername="SYS_METRIC" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="0.1"/>
+</svg>

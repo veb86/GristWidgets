@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:lc="https://librecad.org" xmlns:xlink="http://www.w3.org/1999/xlink" width="6in" height="8in" viewBox="0 0 6 8">
+    <g lc:layername="!VSCHEMES" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="0.1">
+        <line x1="2.5" y1="0" x2="3.5" y2="1"/>
+        <line x1="2.5" y1="1" x2="3.5" y2="0"/>
+        <line x1="0.5" y1="1" x2="3" y2="5.5"/>
+        <line x1="4.99999999" y1="0" x2="5.99999999" y2="1"/>
+        <line x1="4.99999999" y1="1" x2="5.99999999" y2="0"/>
+        <line x1="2.99999999" y1="1" x2="5.49999999" y2="5.5"/>
+        <line x1="2.2" y1="7" x2="0" y2="7"/>
+        <line x1="0" y1="7" x2="0" y2="3.63851449"/>
+        <path d="M1.50243084,2.8043755 L4.00243083,2.8043755 "/>
+        <path d="M1.99756916,3.6956245 L4.49756916,3.6956245 "/>
+        <line x1="6" y1="6" x2="2.2" y2="6"/>
+        <line x1="6" y1="7" x2="6" y2="6"/>
+        <line x1="2.2" y1="7" x2="2.2" y2="6"/>
+        <line x1="1.36148542" y1="2.55067375" x2="0.66215955" y2="2.93918862"/>
+        <line x1="0.66215955" y1="2.93918862" x2="1.43918829" y2="4.33784036"/>
+        <line x1="1.43918829" y1="4.33784036" x2="2.13851416" y2="3.94932549"/>
+        <line x1="0" y1="3.63851449" x2="1.05067392" y2="3.63851449"/>
+        <line x1="6" y1="8" x2="2.2" y2="8"/>
+        <line x1="6" y1="7" x2="6" y2="8"/>
+        <line x1="2.2" y1="7" x2="2.2" y2="8"/>
+    </g>
+    <g lc:layername="0" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="0.1"/>
+    <g lc:layername="SYS_METRIC" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="0.1"/>
+</svg>
