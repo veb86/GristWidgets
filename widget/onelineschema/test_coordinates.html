@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест отрисовки по координатам</title>
+    <script src="./d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        #schema-container {
+            width: 100%;
+            height: 600px;
+            background-color: white;
+            border: 1px solid #ccc;
+            overflow: auto;
+        }
+        
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест отрисовки схемы по координатам</h1>
+    <p>Эта страница тестирует новую функциональность отрисовки устройств по координатам ptX и ptY с использованием SVG иконок из поля UGO.</p>
+    
+    <button onclick="drawSchema()">Отрисовать схему</button>
+    <button onclick="clearSchema()">Очистить схему</button>
+    
+    <div id="schema-container"></div>
+
+    <script>
+        let svg = null;
+        let schemaContainer = null;
+        const svgCache = {};
+
+        async function loadSvgIcon(fileName) {
+            // Проверяем кэш
+            if (svgCache[fileName]) {
+                return svgCache[fileName];
+            }
+
+            try {
+                // Пытаемся загрузить SVG файл
+                const response = await fetch(`./svg/${fileName}.svg`);
+                if (!response.ok) {
+                    throw new Error(`SVG файл не найден: ./svg/${fileName}.svg`);
+                }
+                
+                const svgText = await response.text();
+                // Сохраняем в кэш
+                svgCache[fileName] = svgText;
+                return svgText;
+            } catch (error) {
+                console.warn(`Не удалось загрузить SVG иконку: ${fileName}.svg`, error);
+                // Возвращаем стандартную иконку если не найдена
+                try {
+                    const response = await fetch('./svg/default.svg');
+                    const svgText = await response.text();
+                    svgCache[fileName] = svgText;
+                    return svgText;
+                } catch (defaultError) {
+                    console.error('Не удалось загрузить стандартную иконку:', defaultError);
+                    return '<svg width="40" height="20"><rect width="40" height="20" fill="#ccc" stroke="#999"/></svg>';
+                }
+            }
+        }
+
+        async function drawDeviceAtCoordinates(selection, item, x, y, ugo) {
+            // Загружаем SVG иконку по имени из UGO
+            const icon = await loadSvgIcon(ugo);
+
+            // Создаем группу для устройства
+            const g = selection.append('g')
+                .attr('class', 'device coordinate')
+                .attr('transform', `translate(${x}, ${y})`)
+                .attr('data-id', item.id)
+                .attr('data-type', item.Type || '')
+                .attr('data-brand', item.Brand || '')
+                .attr('data-feeder-name', item.feeder_name || '')
+                .attr('data-feeder-num', item.feeder_num || '')
+                .attr('data-ugo', ugo);
+
+            // Добавляем SVG иконку
+            g.append('g')
+                .html(icon);
+
+            // Добавляем текстовую информацию рядом с устройством
+            if (item.Brand || item.feeder_num) {
+                g.append('text')
+                    .attr('x', 25)
+                    .attr('y', -5)
+                    .attr('font-size', '10px')
+                    .attr('text-anchor', 'start')
+                    .text(`${item.Brand || ''} ${item.feeder_num ? '#' + item.feeder_num : ''}`);
+            }
+
+            // Добавляем обработчик клика
+            g.on('click', function(event) {
+                console.log('Клик по устройству:', item);
+                alert(`Устройство: ${item.Type} ${item.Brand} #${item.feeder_num}\nКоординаты: (${item.ptX}, ${item.ptY})`);
+            });
+        }
+
+        async function drawCoordinateSchema(data) {
+            schemaContainer = document.getElementById('schema-container');
+            
+            // Очищаем контейнер
+            if (svg) {
+                svg.selectAll("*").remove();
+            } else {
+                // Создаем SVG элемент
+                svg = d3.select(schemaContainer)
+                    .append('svg')
+                    .attr('width', '100%')
+                    .attr('height', '100%')
+                    .attr('preserveAspectRatio', 'xMinYMin meet');
+            }
+
+            const content = svg.append('g').attr('class', 'content');
+
+            // Определяем максимальные координаты для размера SVG
+            let maxX = 0;
+            let maxY = 0;
+
+            for (const item of data) {
+                const ptX = item.ptX || 0;
+                const ptY = item.ptY || 0;
+                
+                if (ptX > maxX) maxX = ptX;
+                if (ptY > maxY) maxY = ptY;
+            }
+
+            // Устанавливаем размеры SVG с учетом отступов
+            svg.attr('viewBox', `0 0 ${maxX + 100} ${maxY + 100}`);
+
+            // Отрисовываем каждое устройство по координатам
+            for (const item of data) {
+                const ptX = item.ptX || 0;
+                const ptY = item.ptY || 0;
+                const ugo = item.UGO || 'default';
+
+                await drawDeviceAtCoordinates(content, item, ptX, ptY, ugo);
+            }
+        }
+
+        function clearSchema() {
+            if (svg) {
+                svg.selectAll("*").remove();
+            }
+        }
+
+        async function drawSchema() {
+            // Данные из таблицы, которую нужно отобразить
+            const testData = [
+                {id: 1, manualSort: 1, feeder_name: "ЩО1", feeder_row: 1, feeder_col: 1, Type: "АВ", Brand: "Ва57", feeder_num: 1, UGO: "DEVICE_VSCHEMES_QF", ptX: 250, ptY: 100},
+                {id: 2, manualSort: 2, feeder_name: "ЩО1", feeder_row: 2, feeder_col: 1, Type: "АВДТ", Brand: "АВДТ", feeder_num: 1, UGO: "DEVICE_VSCHEMES_QFD", ptX: 250, ptY: 200},
+                {id: 3, manualSort: 3, feeder_name: "ЩО1", feeder_row: 1, feeder_col: 1, Type: "АВ", Brand: "Ва57", feeder_num: 2, UGO: "DEVICE_VSCHEMES_QF", ptX: 450, ptY: 100},
+                {id: 4, manualSort: 4, feeder_name: "ЩО1", feeder_row: 1, feeder_col: 1, Type: "АВ", Brand: "Ва57", feeder_num: 3, UGO: "DEVICE_VSCHEMES_QF", ptX: 550, ptY: 100},
+                {id: 5, manualSort: 5, feeder_name: "ЩО1", feeder_row: 1, feeder_col: 1, Type: "АВ", Brand: "Ва57", feeder_num: 4, UGO: "DEVICE_VSCHEMES_QF", ptX: 650, ptY: 100},
+                {id: 6, manualSort: 6, feeder_name: "ЩО1", feeder_row: 1, feeder_col: 2, Type: "АВ", Brand: "Ва57", feeder_num: 1, UGO: "DEVICE_VSCHEMES_QF", ptX: 350, ptY: 100}
+            ];
+
+            await drawCoordinateSchema(testData);
+        }
+
+        // Автоматически отрисовать схему при загрузке
+        window.onload = function() {
+            drawSchema();
+        };
+    </script>
+</body>
+</html>

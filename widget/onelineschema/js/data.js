@@ -34,21 +34,25 @@ var DataModule = (function() {
     const records = [];
     for (let i = 0; i < rawData.id.length; i++) {
       const record = { id: rawData.id[i] };
-      
+
       // Добавляем все поля из данных
       Object.keys(rawData).forEach(key => {
-        if (key !== 'id') {
-          record[key] = rawData[key][i];
-        }
+        // Приводим ключи к нижнему регистру для совместимости
+        const normalizedKey = key.toLowerCase();
+        record[normalizedKey] = rawData[key][i];
+
+        // Также сохраняем оригинальное имя поля для обратной совместимости
+        record[key] = rawData[key][i];
       });
-      
+
       records.push(record);
     }
 
-    // Группируем по feeder_name
+    // Группируем по feeder_name (проверяем оба варианта написания)
     const groupedData = {};
     records.forEach(record => {
-      const feederName = record.feeder_name || 'default';
+      // Проверяем наличие разных вариантов написания названия фидера
+      const feederName = record.feeder_name || record['feeder-name'] || record['feederName'] || record.FEEDER_NAME || 'default';
       if (!groupedData[feederName]) {
         groupedData[feederName] = [];
       }
@@ -58,11 +62,17 @@ var DataModule = (function() {
     // Сортируем каждую группу по feeder_row и feeder_col
     Object.keys(groupedData).forEach(feederName => {
       groupedData[feederName].sort((a, b) => {
+        // Проверяем разные варианты написания полей сортировки
+        const aRow = a.feeder_row || a['feeder-row'] || a['feederRow'] || a.FEEDER_ROW || 0;
+        const bRow = b.feeder_row || b['feeder-row'] || b['feederRow'] || b.FEEDER_ROW || 0;
+        const aCol = a.feeder_col || a['feeder-col'] || a['feederCol'] || a.FEEDER_COL || 0;
+        const bCol = b.feeder_col || b['feeder-col'] || b['feederCol'] || b.FEEDER_COL || 0;
+
         // Сначала по feeder_row, потом по feeder_col
-        if (a.feeder_row !== b.feeder_row) {
-          return (a.feeder_row || 0) - (b.feeder_row || 0);
+        if (aRow !== bRow) {
+          return aRow - bRow;
         }
-        return (a.feeder_col || 0) - (b.feeder_col || 0);
+        return aCol - bCol;
       });
     });
 
