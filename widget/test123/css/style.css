@@ -1,4 +1,4 @@
-/* Основные стили для виджета-органайзера test123 */
+/* Основные стили для виджета-селектора дашбордов test123 */
 
 /* Сброс стилей и базовая разметка */
 * {
@@ -11,74 +11,56 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     height: 100vh;
     overflow: hidden;
-}
-
-/* Основной контейнер с flexbox-версткой */
-.main-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-}
-
-/* Левая колонка (50%) - виджет table1 */
-#left-column {
-    width: 50%;
-    border-right: 1px solid #ccc;
-    background-color: #f8f9fa;
-    display: flex;
-    flex-direction: column;
     padding: 10px;
 }
 
-/* Правая колонка (50%) - виджет table2 */
-#right-column {
-    width: 50%;
-    background-color: #ffffff;
+/* Контейнер для выбора дашборда */
+.dashboard-selector-container {
+    margin-bottom: 15px;
     display: flex;
-    flex-direction: column;
-    padding: 10px;
+    align-items: center;
+    gap: 10px;
 }
 
-/* Заголовки для колонок */
-.column h4 {
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #ddd;
+.dashboard-selector-container label {
+    font-weight: bold;
+    white-space: nowrap;
 }
 
-/* Стили для iframe с виджетами */
-iframe {
+.dashboard-selector-container select {
     flex: 1;
+    min-width: 200px;
+}
+
+/* Контейнер для iframe дашборда */
+.dashboard-iframe-container {
+    width: 100%;
+    height: calc(100vh - 80px); /* Учитываем высоту селекта и отступы */
     border: 1px solid #ddd;
     border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Стили для iframe с дашбордом */
+#dashboard-frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
 }
 
 /* Адаптивность для маленьких экранов */
 @media (max-width: 768px) {
-    .main-container {
+    .dashboard-selector-container {
         flex-direction: column;
+        align-items: stretch;
     }
 
-    #left-column {
-        width: 100%;
-        height: 50%;
-        border-right: none;
-        border-bottom: 1px solid #ccc;
+    body {
+        padding: 5px;
     }
 
-    #right-column {
-        width: 100%;
-        height: 50%;
-    }
-}
-
-/* Улучшение визуального разделения */
-@media (min-width: 1200px) {
-    #left-column {
-        width: 50%;
-    }
-
-    #right-column {
-        width: 50%;
+    .dashboard-iframe-container {
+        height: calc(100vh - 120px); /* Увеличиваем отступ для мобильных устройств */
     }
 }

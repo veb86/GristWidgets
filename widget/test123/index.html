@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Виджет-органайзер test123</title>
+    <title>Виджет-селектор дашбордов test123</title>
     <!-- Подключение стилей для виджета-органайзера -->
     <link rel="stylesheet" href="./css/style.css">
+
+    <!-- Загрузка Grist плагин API -->
+    <script src="grist-plugin-api.js"></script>
 
     <!-- Загрузка внешних библиотек -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -14,99 +17,164 @@
     <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css">
 </head>
 <body>
-    <!-- Основной контейнер с flexbox-версткой для разделения экрана на две колонки -->
-    <!-- Делит интерфейс на левую колонку (50%) и правую колонку (50%) -->
-    <div class="main-container">
-        <!-- Левая колонка (50%) - виджет table1 -->
-        <div id="left-column" class="column">
-            <h4>Table 1 Widget</h4>
-            <iframe id="table1-frame" 
-                    src="../table1/index.html" 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0">
-            </iframe>
-        </div>
-
-        <!-- Правая колонка (50%) - виджет table2 -->
-        <div id="right-column" class="column">
-            <h4>Table 2 Widget</h4>
-            <iframe id="table2-frame" 
-                    src="../table2/index.html" 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0">
-            </iframe>
-        </div>
+    <!-- Контейнер для выбора дашборда -->
+    <div class="dashboard-selector-container">
+        <label for="dashboard-select">Выберите дашборд:</label>
+        <select id="dashboard-select" class="form-select">
+            <option value="">-- Выберите дашборд --</option>
+        </select>
     </div>
 
-    <!-- Глобальный объект для API взаимодействия между компонентами -->
+    <!-- Контейнер для отображения iframe дашборда -->
+    <div class="dashboard-iframe-container">
+        <iframe id="dashboard-frame"
+                width="100%"
+                height="100%"
+                frameborder="0">
+        </iframe>
+    </div>
+
+    <!-- Скрипт для работы с Grist API и отображением дашбордов -->
     <script>
-        // Глобальный объект для API взаимодействия между компонентами
-        window.AppHost = {
-            subscribers: [],
-
-            // Метод получения данных
-            getData() {
-                // Возвращаем данные из Grist API
-                if (window.grist) {
-                    return window.grist.getTable();
-                }
-                return null;
-            },
-
-            // Метод подписки на изменения данных
-            subscribe(callback) {
-                this.subscribers.push(callback);
-
-                // Возвращаем функцию отписки
-                return () => {
-                    const index = this.subscribers.indexOf(callback);
-                    if (index > -1) {
-                        this.subscribers.splice(index, 1);
-                    }
-                };
-            },
-
-            // Метод отправки событий
-            sendEvent(name, data) {
-                // Отправляем событие через CustomEvent
-                const event = new CustomEvent(name, { detail: data });
-                document.dispatchEvent(event);
-            },
-
-            // Метод вызова подписчиков при изменении данных
-            notifySubscribers(data) {
-                this.subscribers.forEach(callback => {
-                    try {
-                        callback(data);
-                    } catch (error) {
-                        console.error('Error in subscriber callback:', error);
-                    }
-                });
-            },
-
-            // Метод для установки выбранных строк
-            setSelectedRows(rowIds) {
-                if (window.grist) {
-                    window.grist.setSelectedRows(rowIds);
-                }
-            },
-
-            // Метод для установки позиции курсора
-            setCursorPos(pos) {
-                if (window.grist) {
-                    window.grist.setCursorPos(pos);
-                }
-            }
-        };
-
-        // Обработка сообщений от Grist API
+        // Настройка доступа к данным
         if (window.grist) {
-            window.grist.ready();
-            window.grist.onRecords(function(records) {
-                window.AppHost.notifySubscribers({ type: 'records', data: records });
+            // Установка соответствия колонок до инициализации
+            grist.mapColumnNames({
+                'Dashboard Name': 'A',
+                'Dashboard Link': 'B',
+                'Width': 'C',
+                'Height': 'D'
             });
+
+            // Настройка виджета с требуемым уровнем доступа
+            grist.ready({
+                requiredAccess: 'read table'
+            });
+
+            // Обработка полученных записей
+            grist.onRecords(updateOptions);
+        } else {
+            // Для отладки вне Grist
+            console.log('Grist API not available - running in debug mode');
+
+            // Заглушка для тестирования
+            setTimeout(() => {
+                const mockData = [
+                    {
+                        id: 1,
+                        A: 'Тестовый дашборд 1',
+                        B: 'http://localhost:3333/table1/index.html',
+                        C: 1000,
+                        D: 1000
+                    },
+                    {
+                        id: 2,
+                        A: 'Тестовый дашборд 2',
+                        B: 'https://example.com/dashboard2',
+                        C: 1024,
+                        D: 768
+                    }
+                ];
+                updateOptions(mockData);
+            }, 1000);
+        }
+
+        // Функция обновления опций в выпадающем списке
+        function updateOptions(rows) {
+            console.log('Received rows from Grist:', rows);
+            const selectElement = document.getElementById('dashboard-select');
+
+            // Очистка текущих опций
+            selectElement.innerHTML = '<option value="">-- Выберите дашборд --</option>';
+
+            // Добавление новых опций из данных
+            if (rows && Array.isArray(rows)) {
+                rows.forEach(row => {
+                    console.log('Processing row:', row);
+
+                    // Используем индекс строки как значение, так как row.id может быть недоступен
+                    const option = document.createElement('option');
+                    option.value = row.id || row._index || row[0]; // Используем первый элемент массива если id недоступен
+
+                    // Получаем значения колонок по фактическим именам в вашей таблице
+                    // На основе консоли: A - имя дашборда, B - ссылка, C - ширина, D - высота
+                    const name = row.A || (Array.isArray(row) && row.length > 1 ? row[1] : 'Без названия');
+                    const link = row.B || (Array.isArray(row) && row.length > 2 ? row[2] : '');
+                    const width = row.C || (Array.isArray(row) && row.length > 3 ? row[3] : 800);
+                    const height = row.D || (Array.isArray(row) && row.length > 4 ? row[4] : 600);
+
+                    option.textContent = name || 'Без названия';
+
+                    console.log(`Dashboard: ${name}, Link: ${link}, Size: ${width}x${height}`);
+
+                    // Сохраняем размеры в data-атрибутах
+                    option.setAttribute('data-width', width || 800);
+                    option.setAttribute('data-height', height || 600);
+                    option.setAttribute('data-link', link || '');
+
+                    selectElement.appendChild(option);
+                });
+            }
+
+            // Добавляем сообщение если нет данных
+            if (!rows || rows.length === 0) {
+                console.log('No dashboard data found');
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '-- Нет доступных дашбордов --';
+                option.disabled = true;
+                selectElement.appendChild(option);
+            }
+        }
+
+        // Обработчик изменения выбора дашборда
+        document.getElementById('dashboard-select').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            console.log('Selected option:', selectedOption);
+            if (selectedOption && selectedOption.value && !selectedOption.disabled) {
+                updateIframe(selectedOption);
+            } else {
+                // Если ничего не выбрано, скрываем iframe
+                document.getElementById('dashboard-frame').style.display = 'none';
+            }
+        });
+
+        // Функция обновления iframe
+        function updateIframe(option) {
+            const iframe = document.getElementById('dashboard-frame');
+            const link = option.getAttribute('data-link');
+            const width = option.getAttribute('data-width');
+            const height = option.getAttribute('data-height');
+
+            console.log(`Updating iframe: ${link}, size: ${width}x${height}`);
+
+            if (link) {
+                // Добавляем параметр embed=true к URL если его нет
+                try {
+                    const url = new URL(link);
+                    if (!url.searchParams.has('embed')) {
+                        url.searchParams.append('embed', 'true');
+                    }
+
+                    iframe.src = url.toString();
+                    iframe.width = width;
+                    iframe.height = height;
+
+                    // Показываем iframe
+                    iframe.style.display = 'block';
+
+                    // Обновляем размеры контейнера
+                    const container = document.querySelector('.dashboard-iframe-container');
+                    if(container) {
+                        container.style.height = `${height}px`;
+                    }
+                } catch(e) {
+                    console.error('Invalid URL:', link, e);
+                    iframe.style.display = 'none';
+                }
+            } else {
+                iframe.style.display = 'none';
+            }
         }
     </script>
 
