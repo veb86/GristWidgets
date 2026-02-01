@@ -149,13 +149,120 @@ var DataModule = (function() {
   }
 
   /**
+   * Получить значение ShieldName из таблицы SYSTEM
+   * Ищет строку со значением "ShieldName" в столбце A и возвращает значение из столбца B
+   * @returns {Promise<string|null>} Имя щита или null, если не найдено
+   */
+  async function getShieldNameFromSystem() {
+    try {
+      console.log('Получение ShieldName из таблицы SYSTEM...');
+
+      // Загружаем данные из таблицы SYSTEM
+      const systemData = await grist.docApi.fetchTable('SYSTEM');
+
+      if (!systemData || !Array.isArray(systemData.id)) {
+        console.warn('Таблица SYSTEM пуста или имеет неверный формат');
+        return null;
+      }
+
+      // Получаем имена столбцов
+      const columns = Object.keys(systemData).filter(key => key !== 'id');
+
+      if (columns.length < 2) {
+        console.warn('В таблице SYSTEM недостаточно столбцов');
+        return null;
+      }
+
+      // Предполагаем, что первый столбец (не id) - это столбец A, второй - столбец B
+      const columnA = columns[0];
+      const columnB = columns[1];
+
+      console.log(`Поиск "ShieldName" в столбце ${columnA}, значение будет взято из столбца ${columnB}`);
+
+      // Ищем строку с "ShieldName" в столбце A
+      for (let i = 0; i < systemData[columnA].length; i++) {
+        const valueA = systemData[columnA][i];
+
+        if (valueA && valueA.toString().trim() === 'ShieldName') {
+          const shieldName = systemData[columnB][i];
+          console.log('Найден ShieldName:', shieldName);
+          return shieldName ? shieldName.toString().trim() : null;
+        }
+      }
+
+      console.warn('Параметр "ShieldName" не найден в таблице SYSTEM');
+      return null;
+    } catch (error) {
+      console.error('Ошибка при получении ShieldName из таблицы SYSTEM:', error);
+      // Если таблица SYSTEM не существует, это не критичная ошибка
+      return null;
+    }
+  }
+
+  /**
+   * Получить уникальные группы из таблицы alldevgroup
+   * @param {string} shieldName - Имя щита для фильтрации
+   * @returns {Promise<Array>} Массив уникальных имен групп
+   */
+  async function getUniqueGroupsFromAllDevGroup(shieldName) {
+    try {
+      console.log('Получение уникальных групп из таблицы alldevgroup для щита:', shieldName);
+
+      // Загружаем данные из таблицы alldevgroup
+      const allDevGroupData = await grist.docApi.fetchTable('alldevgroup');
+
+      if (!allDevGroupData || !Array.isArray(allDevGroupData.id)) {
+        console.warn('Таблица alldevgroup пуста или имеет неверный формат');
+        return [];
+      }
+
+      // Ищем столбец ShieldName (или его варианты)
+      let shieldNameColumn = null;
+      const possibleNames = ['ShieldName', 'shieldname', 'shield_name', 'SHIELDNAME'];
+
+      for (const name of possibleNames) {
+        if (allDevGroupData[name]) {
+          shieldNameColumn = name;
+          break;
+        }
+      }
+
+      if (!shieldNameColumn) {
+        console.warn('Столбец ShieldName не найден в таблице alldevgroup');
+        return [];
+      }
+
+      // Собираем уникальные значения для указанного shieldName
+      const uniqueGroups = new Set();
+
+      for (let i = 0; i < allDevGroupData.id.length; i++) {
+        const groupShieldName = allDevGroupData[shieldNameColumn][i];
+
+        // Проверяем, соответствует ли группа текущему щиту
+        if (groupShieldName && groupShieldName.toString().trim() === shieldName) {
+          // Добавляем само значение ShieldName как группу
+          uniqueGroups.add(groupShieldName.toString().trim());
+        }
+      }
+
+      const groups = Array.from(uniqueGroups);
+      console.log('Найдено уникальных групп:', groups.length, groups);
+      return groups;
+    } catch (error) {
+      console.error('Ошибка при получении групп из alldevgroup:', error);
+      return [];
+    }
+  }
+
+  /**
    * Загрузить данные из Grist
    * @param {string} tableName - Название таблицы для загрузки
+   * @param {string|null} shieldName - Имя щита для фильтрации (опционально)
    * @returns {Promise<Object>} Объект с преобразованными данными
    */
-  async function loadData(tableName) {
+  async function loadData(tableName, shieldName) {
     try {
-      console.log('Загрузка данных из таблицы:', tableName);
+      console.log('Загрузка данных из таблицы:', tableName, 'для щита:', shieldName || 'все');
 
       if (!tableName) {
         throw new Error('Имя таблицы не указано');
@@ -203,6 +310,8 @@ var DataModule = (function() {
     loadData: loadData,
     transformData: transformData,
     checkTableExists: checkTableExists,
-    getAvailableTables: getAvailableTables
+    getAvailableTables: getAvailableTables,
+    getShieldNameFromSystem: getShieldNameFromSystem,
+    getUniqueGroupsFromAllDevGroup: getUniqueGroupsFromAllDevGroup
   };
 })();
