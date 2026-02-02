@@ -34,7 +34,13 @@ const DataModule = {
         parentId: tableData[CONFIG.COLUMNS.PARENT_ID]?.[i] || null,
         canBeHead: tableData[CONFIG.COLUMNS.CAN_BE_HEAD]?.[i] || false,
         onlyGUpath: tableData[CONFIG.COLUMNS.ONLY_GU_PATH]?.[i] || '',
-        fullpath: tableData[CONFIG.COLUMNS.FULL_PATH]?.[i] || ''
+        fullpath: tableData[CONFIG.COLUMNS.FULL_PATH]?.[i] || '',
+        headDeviceName: tableData[CONFIG.COLUMNS.HEAD_DEVICE_NAME]?.[i] || '',
+        ngHeadDevice: tableData[CONFIG.COLUMNS.NG_HEAD_DEVICE]?.[i] || '',
+        nmoBaseName: tableData[CONFIG.COLUMNS.NMO_BASE_NAME]?.[i] || '',
+        level1: tableData[CONFIG.COLUMNS.LEVEL_1]?.[i] || '',
+        level2: tableData[CONFIG.COLUMNS.LEVEL_2]?.[i] || '',
+        level3: tableData[CONFIG.COLUMNS.LEVEL_3]?.[i] || ''
       });
     }
 
@@ -83,6 +89,31 @@ const DataModule = {
       await grist.docApi.applyUserActions(actions);
     } catch (error) {
       console.error('Ошибка при пакетном обновлении путей:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Обновляет уровни групп для нескольких устройств пакетом
+   * @param {Array<Object>} updates - Массив обновлений
+   * @returns {Promise<void>}
+   */
+  async updateDeviceGroupsBatch(updates) {
+    try {
+      const actions = updates.map(update => [
+        'UpdateRecord',
+        CONFIG.TABLE_NAME,
+        update.rowId,
+        {
+          [CONFIG.COLUMNS.LEVEL_1]: update.level1,
+          [CONFIG.COLUMNS.LEVEL_2]: update.level2,
+          [CONFIG.COLUMNS.LEVEL_3]: update.level3
+        }
+      ]);
+
+      await grist.docApi.applyUserActions(actions);
+    } catch (error) {
+      console.error('Ошибка при пакетном обновлении групп:', error);
       throw error;
     }
   },
