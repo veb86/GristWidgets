@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Calc</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <!-- Панель управления расчётами -->
+  <div id="control-panel" class="control-panel">
+    <h2>Панель расчётов</h2>
+
+    <!-- Кнопка пересчёта путей устройств -->
+    <div class="button-group">
+      <button id="calc-paths-btn" class="calc-button">
+        Пересчитать пути устройств
+      </button>
+      <div id="status-message" class="status-message"></div>
+    </div>
+
+    <!-- Информация о процессе -->
+    <div id="progress-info" class="progress-info" style="display: none;">
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+      <div id="progress-text" class="progress-text"></div>
+    </div>
+  </div>
+
+  <!-- Загрузка Grist API -->
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+
+  <!-- Модули приложения -->
+  <script src="./js/config.js"></script>
+  <script src="./js/data.js"></script>
+  <script src="./js/pathCalculator.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
