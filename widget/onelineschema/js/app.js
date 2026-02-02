@@ -37,13 +37,30 @@ var AppModule = (function() {
     try {
       const config = ConfigModule.getConfig();
 
+      // Получаем имя щита из таблицы SYSTEM
+      const shieldName = await DataModule.getShieldNameFromSystem();
+
+      if (!shieldName) {
+        console.warn('ShieldName не найден в таблице SYSTEM, загружаем все данные');
+      } else {
+        console.log('Используется щит:', shieldName);
+      }
+
       // Загружаем данные из указанной таблицы
-      const data = await DataModule.loadData(tableName);
+      const data = await DataModule.loadData(tableName, shieldName);
 
-      // Отрисовываем схему
-      SchemaModule.drawSchema(data, config);
+      // Проверяем, есть ли данные в таблице schema
+      const hasData = Object.keys(data).length > 0 && Object.values(data).some(arr => arr && arr.length > 0);
 
-      UIModule.showStatusMessage(`Схема успешно обновлена из таблицы "${tableName}"`, 'success');
+      if (!hasData) {
+        // Если данных нет, показываем модальное окно с генератором
+        console.log('Таблица schema пуста, показываем генератор');
+        await UIModule.showGeneratorModal(shieldName);
+      } else {
+        // Если данные есть, отрисовываем схему
+        SchemaModule.drawSchema(data, config);
+        UIModule.showStatusMessage(`Схема успешно обновлена из таблицы "${tableName}"`, 'success');
+      }
     } catch (error) {
       console.error('Ошибка обновления схемы:', error);
       UIModule.showStatusMessage(`Ошибка обновления схемы: ${error.message}`, 'error');

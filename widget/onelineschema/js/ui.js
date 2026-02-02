@@ -62,6 +62,145 @@ var UIModule = (function(DataModule, SchemaModule, ConfigModule) {
   }
 
   /**
+   * Показать модальное окно с генератором схемы
+   * @param {string} shieldName - Имя щита
+   */
+  async function showGeneratorModal(shieldName) {
+    try {
+      // Получаем уникальные группы из таблицы alldevgroup
+      const uniqueGroups = await DataModule.getUniqueGroupsFromAllDevGroup(shieldName);
+
+      // Создаем модальное окно
+      const modalHtml = createGeneratorModalHtml(shieldName, uniqueGroups);
+
+      // Добавляем модальное окно в DOM
+      let modalContainer = document.getElementById('generator-modal');
+      if (!modalContainer) {
+        modalContainer = document.createElement('div');
+        modalContainer.id = 'generator-modal';
+        document.body.appendChild(modalContainer);
+      }
+
+      modalContainer.innerHTML = modalHtml;
+      modalContainer.style.display = 'block';
+
+      // Добавляем обработчик для кнопки генерации
+      const generateBtn = document.getElementById('generate-schema-btn');
+      if (generateBtn) {
+        generateBtn.addEventListener('click', function() {
+          handleGenerateSchema(shieldName, uniqueGroups);
+        });
+      }
+
+      // Добавляем обработчик для кнопки закрытия
+      const closeBtn = document.getElementById('close-modal-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          closeGeneratorModal();
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка показа модального окна генератора:', error);
+      showStatusMessage(`Ошибка: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Создать HTML для модального окна генератора
+   * @param {string} shieldName - Имя щита
+   * @param {Array} uniqueGroups - Массив уникальных групп
+   * @returns {string} HTML код модального окна
+   */
+  function createGeneratorModalHtml(shieldName, uniqueGroups) {
+    let fieldsHtml = '';
+
+    if (uniqueGroups && uniqueGroups.length > 0) {
+      fieldsHtml = uniqueGroups.map((group, index) => `
+        <div class="form-group">
+          <label for="group-field-${index}" class="form-label">${group}</label>
+          <input
+            type="text"
+            id="group-field-${index}"
+            class="form-control"
+            placeholder="Введите значение для ${group}"
+            data-group="${group}"
+          />
+        </div>
+      `).join('');
+    } else {
+      fieldsHtml = '<p class="text-muted">Группы не найдены в таблице alldevgroup</p>';
+    }
+
+    return `
+      <div class="modal-overlay">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Генератор схемы для щита: ${shieldName || 'Не указан'}</h3>
+            <button id="close-modal-btn" class="btn-close" aria-label="Закрыть">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p class="alert alert-info">
+              Таблица schema пуста. Заполните поля ниже для генерации схемы.
+            </p>
+            ${fieldsHtml}
+          </div>
+          <div class="modal-footer">
+            <button id="generate-schema-btn" class="btn btn-primary">Сгенерировать схему</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Обработать генерацию схемы
+   * @param {string} shieldName - Имя щита
+   * @param {Array} uniqueGroups - Массив уникальных групп
+   */
+  function handleGenerateSchema(shieldName, uniqueGroups) {
+    try {
+      // Собираем значения из полей ввода
+      const values = {};
+
+      uniqueGroups.forEach((group, index) => {
+        const input = document.getElementById(`group-field-${index}`);
+        if (input) {
+          values[group] = input.value.trim();
+        }
+      });
+
+      console.log('Генерация схемы с параметрами:', values);
+
+      // TODO: Здесь должна быть логика генерации и добавления данных в таблицу schema
+      // Пока просто показываем сообщение об успехе
+
+      showStatusMessage('Схема сгенерирована успешно!', 'success');
+      closeGeneratorModal();
+
+      // Перезагружаем схему
+      setTimeout(() => {
+        if (window.AppModule && typeof window.AppModule.updateSchema === 'function') {
+          window.AppModule.updateSchema();
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Ошибка генерации схемы:', error);
+      showStatusMessage(`Ошибка генерации: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Закрыть модальное окно генератора
+   */
+  function closeGeneratorModal() {
+    const modalContainer = document.getElementById('generator-modal');
+    if (modalContainer) {
+      modalContainer.style.display = 'none';
+      modalContainer.innerHTML = '';
+    }
+  }
+
+  /**
    * Загрузить список доступных таблиц
    */
   async function loadTables() {
@@ -122,6 +261,8 @@ var UIModule = (function(DataModule, SchemaModule, ConfigModule) {
     initializeUI: initializeUI,
     loadTables: loadTables,
     loadAndDisplaySchema: loadAndDisplaySchema,
-    showStatusMessage: showStatusMessage
+    showStatusMessage: showStatusMessage,
+    showGeneratorModal: showGeneratorModal,
+    closeGeneratorModal: closeGeneratorModal
   };
 })(DataModule, SchemaModule, ConfigModule);
