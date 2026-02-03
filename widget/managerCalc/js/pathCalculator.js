@@ -44,8 +44,8 @@ const PathCalculator = {
 
     console.log(`buildFullPath: processing device "${device.deviceName}", parentId=${device.parentId}`);
 
-    // Если нет родителя - это корневое устройство
-    if (!device.parentId) {
+    // Если нет родителя (null, undefined или -1) - это корневое устройство
+    if (!device.parentId || device.parentId === -1) {
       const path = device.deviceName;
       this.cache.fullpath.set(deviceId, path);
       console.log(`buildFullPath: root device "${device.deviceName}", path="${path}"`);
@@ -99,8 +99,8 @@ const PathCalculator = {
 
     console.log(`buildOnlyGUPath: устройство "${device.deviceName}" может быть головным: ${canBeHead} (canBeHead: ${device.canBeHead}, isHeadByDeviceName: ${isHeadByDeviceName})`);
 
-    // Если нет родителя - это корневое устройство
-    if (!device.parentId) {
+    // Если нет родителя (null, undefined или -1) - это корневое устройство
+    if (!device.parentId || device.parentId === -1) {
       // Добавляем только если может быть головным
       const path = canBeHead ? device.deviceName : '';
       this.cache.onlyGUpath.set(deviceId, path);
@@ -201,7 +201,7 @@ const PathCalculator = {
     const device = deviceMap.get(deviceId);
 
     // Устройство не найдено или нет родителя - цикла нет
-    if (!device || !device.parentId) {
+    if (!device || !device.parentId || device.parentId === -1) {
       return false;
     }
 
@@ -234,8 +234,8 @@ const PathCalculator = {
         );
       }
 
-      // Проверка на существование родителя
-      if (device.parentId && !deviceMap.has(device.parentId)) {
+      // Проверка на существование родителя (если parentId не равен -1)
+      if (device.parentId && device.parentId !== -1 && !deviceMap.has(device.parentId)) {
         errors.push(
           `Родительское устройство не найдено для "${device.deviceName}"`
         );

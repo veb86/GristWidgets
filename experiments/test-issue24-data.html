@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест с данными из issue #24</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f0f0f0;
+    }
+
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 600px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 4px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    .error {
+      color: #f44336;
+      font-weight: bold;
+    }
+
+    .success {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Тестирование с реальными данными из issue #24</h1>
+
+  <div class="test-section">
+    <h2>Результаты расчёта путей</h2>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Устройство</th>
+          <th>Parent ID</th>
+          <th>canBeHead</th>
+          <th>fullpath</th>
+          <th>onlyGUpath</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <div class="test-section">
+    <h2>Лог работы</h2>
+    <pre id="test-log"></pre>
+  </div>
+
+  <!-- Подключаем модули виджета -->
+  <script src="../widget/managerCalc/js/config.js"></script>
+  <script>
+    // Создаём упрощённую версию DataModule для тестов
+    const DataModule = {
+      createDeviceMap(devices) {
+        const deviceMap = new Map();
+        devices.forEach(device => {
+          deviceMap.set(device.rowId, device);
+        });
+        return deviceMap;
+      }
+    };
+  </script>
+  <script src="../widget/managerCalc/js/pathCalculator.js"></script>
+
+  <script>
+    // Реальные данные из issue #24 (упрощённая версия для ключевых устройств)
+    const testDevices = [
+      // Корневое устройство (ГПУ с parentId = -1, но в таблице нет такой записи)
+      // Вместо этого ВРУ имеет parentId = -1
+      {
+        rowId: 36,
+        deviceName: 'ВРУ',
+        parentId: -1,
+        canBeHead: true,
+        headDeviceName: 'ГПУ',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      // Устройства с parentId = 36 (ВРУ)
+      {
+        rowId: 37,
+        deviceName: 'ЩО',
+        parentId: 36,
+        canBeHead: true,
+        headDeviceName: 'ВРУ',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      {
+        rowId: 39,
+        deviceName: 'ЩР',
+        parentId: 36,
+        canBeHead: true,
+        headDeviceName: 'ВРУ',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      {
+        rowId: 40,
+        deviceName: 'ЩВ',
+        parentId: 36,
+        canBeHead: true,
+        headDeviceName: 'ВРУ',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      {
+        rowId: 44,
+        deviceName: 'ПЭСПЗ',
+        parentId: 36,
+        canBeHead: true,
+        headDeviceName: 'ВРУ',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      // Устройства с parentId = 39 (ЩР)
+      {
+        rowId: 2,
+        deviceName: 'МФУ1',
+        parentId: 39,
+        canBeHead: false,
+        headDeviceName: 'ЩР',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      {
+        rowId: 3,
+        deviceName: 'то1',
+        parentId: 39,
+        canBeHead: false,
+        headDeviceName: 'ЩР',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      {
+        rowId: 6,
+        deviceName: 'АРМ1',
+        parentId: 39,
+        canBeHead: false,
+        headDeviceName: 'ЩР',
+        onlyGUpath: '',
+        fullpath: ''
+      },
+      // Добавим ещё одно устройство с вложенностью для проверки
+      {
+        rowId: 41,
+        deviceName: 'Ст',
+        parentId: 44,
+        canBeHead: true,
+        headDeviceName: 'ПЭСПЗ',
+        onlyGUpath: '',
+        fullpath: ''
+      }
+    ];
+
+    let log = '';
+
+    function addLog(message) {
+      log += message + '\n';
+      document.getElementById('test-log').textContent = log;
+    }
+
+    function runTests() {
+      addLog('=== Начало тестирования с данными из issue #24 ===\n');
+
+      // Создаём словарь устройств
+      const deviceMap = DataModule.createDeviceMap(testDevices);
+      addLog(`Создан словарь устройств: ${deviceMap.size} записей\n`);
+
+      // Валидация данных
+      addLog('=== Валидация данных ===');
+      const validation = PathCalculator.validateData(testDevices);
+      addLog(`Валидация: ${validation.isValid ? '✅ OK' : '❌ FAIL'}`);
+      if (!validation.isValid) {
+        validation.errors.forEach(error => addLog(`  ❌ ${error}`));
+      }
+      addLog('');
+
+      // Рассчитываем пути для каждого устройства
+      addLog('=== Расчёт путей ===');
+      const resultsBody = document.getElementById('results-body');
+
+      testDevices.forEach(device => {
+        addLog(`\nУстройство: ${device.deviceName} (ID: ${device.rowId}, parentId: ${device.parentId})`);
+
+        // Рассчитываем пути
+        const fullpath = PathCalculator.buildFullPath(device.rowId, deviceMap);
+        const onlyGUpath = PathCalculator.buildOnlyGUPath(device.rowId, deviceMap);
+
+        addLog(`  fullpath: "${fullpath}"`);
+        addLog(`  onlyGUpath: "${onlyGUpath}"`);
+
+        // Добавляем результат в таблицу
+        const row = resultsBody.insertRow();
+        row.insertCell(0).textContent = device.rowId;
+        row.insertCell(1).textContent = device.deviceName;
+        row.insertCell(2).textContent = device.parentId === -1 ? '-1 (root)' : device.parentId;
+        row.insertCell(3).textContent = device.canBeHead ? '✅' : '❌';
+        row.insertCell(4).textContent = fullpath;
+        row.insertCell(5).textContent = onlyGUpath;
+      });
+
+      // Проверяем ожидаемые результаты
+      addLog('\n=== Проверка ожидаемых результатов ===');
+
+      // ВРУ (корень)
+      const vruFull = PathCalculator.buildFullPath(36, deviceMap);
+      const vruGU = PathCalculator.buildOnlyGUPath(36, deviceMap);
+      addLog(`ВРУ: fullpath="${vruFull}", onlyGUpath="${vruGU}"`);
+      addLog(`  Ожидается: fullpath="ВРУ", onlyGUpath="ВРУ"`);
+      addLog(`  Результат: ${vruFull === 'ВРУ' && vruGU === 'ВРУ' ? '✅ OK' : '❌ FAIL'}`);
+
+      // ЩР (потомок ВРУ)
+      const schrFull = PathCalculator.buildFullPath(39, deviceMap);
+      const schrGU = PathCalculator.buildOnlyGUPath(39, deviceMap);
+      addLog(`\nЩР: fullpath="${schrFull}", onlyGUpath="${schrGU}"`);
+      addLog(`  Ожидается: fullpath="ВРУ\\ЩР", onlyGUpath="ВРУ\\ЩР"`);
+      addLog(`  Результат: ${schrFull === 'ВРУ\\ЩР' && schrGU === 'ВРУ\\ЩР' ? '✅ OK' : '❌ FAIL'}`);
+
+      // АРМ1 (потомок ЩР, не может быть головным)
+      const arm1Full = PathCalculator.buildFullPath(6, deviceMap);
+      const arm1GU = PathCalculator.buildOnlyGUPath(6, deviceMap);
+      addLog(`\nАРМ1: fullpath="${arm1Full}", onlyGUpath="${arm1GU}"`);
+      addLog(`  Ожидается: fullpath="ВРУ\\ЩР\\АРМ1", onlyGUpath="ВРУ\\ЩР"`);
+      addLog(`  Результат: ${arm1Full === 'ВРУ\\ЩР\\АРМ1' && arm1GU === 'ВРУ\\ЩР' ? '✅ OK' : '❌ FAIL'}`);
+
+      // Ст (потомок ПЭСПЗ, который потомок ВРУ)
+      const stFull = PathCalculator.buildFullPath(41, deviceMap);
+      const stGU = PathCalculator.buildOnlyGUPath(41, deviceMap);
+      addLog(`\nСт: fullpath="${stFull}", onlyGUpath="${stGU}"`);
+      addLog(`  Ожидается: fullpath="ВРУ\\ПЭСПЗ\\Ст", onlyGUpath="ВРУ\\ПЭСПЗ\\Ст"`);
+      addLog(`  Результат: ${stFull === 'ВРУ\\ПЭСПЗ\\Ст' && stGU === 'ВРУ\\ПЭСПЗ\\Ст' ? '✅ OK' : '❌ FAIL'}`);
+
+      addLog('\n=== Тестирование завершено ===');
+    }
+
+    // Запускаем тесты при загрузке страницы
+    window.addEventListener('load', () => {
+      runTests();
+    });
+  </script>
+</body>
+</html>
