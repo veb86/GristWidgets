@@ -106,7 +106,16 @@ const GroupCalculator = {
         break;
       }
 
-      // Родитель не является последним в пути
+      // Проверяем, существует ли родитель в списке устройств
+      const parentDevice = this.findDeviceByBaseName(currentParent, devicesByBaseName);
+      if (!parentDevice) {
+        // Родительское устройство не найдено, значит мы достигли верхнего узла root
+        // В этом случае 1level принимает значение NGHeadDevice текущего устройства
+        levels.level1 = device.ngHeadDevice || '';
+        break;
+      }
+
+      // Родитель существует, продолжаем обработку
       // Берём его NGHeadDevice и записываем в соответствующий уровень
       const headGroup = this.getHeadGroup(currentParent, devicesByBaseName);
 
@@ -206,18 +215,15 @@ const GroupCalculator = {
       }
 
       // Проверка на существование родителя в таблице
+      // Но пропускаем проверку для случаев, когда родитель не должен существовать (например, для корневых элементов)
       if (device.headDeviceName) {
         const parent = this.findDeviceByBaseName(
           device.headDeviceName,
           devicesByBaseName
         );
 
-        if (!parent) {
-          errors.push(
-            `Родительское устройство "${device.headDeviceName}" ` +
-            `не найдено для "${device.nmoBaseName}"`
-          );
-        }
+        // Не считаем ошибкой, если родитель не найден - это может быть корневое устройство
+        // Вместо этого, алгоритм будет использовать NGHeadDevice текущего устройства для 1level
       }
     });
 

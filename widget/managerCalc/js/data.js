@@ -358,18 +358,47 @@ const DataModule = {
     const columnMapping = this.autoDetectColumnNames(tableData);
 
     try {
-      const actions = updates.map(update => [
-        'UpdateRecord',
-        CONFIG.TABLE_NAME,
-        update.rowId,
-        {
-          [columnMapping.level1 || CONFIG.COLUMNS.LEVEL_1]: update.level1,
-          [columnMapping.level2 || CONFIG.COLUMNS.LEVEL_2]: update.level2,
-          [columnMapping.level3 || CONFIG.COLUMNS.LEVEL_3]: update.level3
-        }
-      ]);
+      const actions = updates.map(update => {
+        // Создаем объект обновления только для существующих колонок
+        const updateFields = {};
 
-      await grist.docApi.applyUserActions(actions);
+        if (columnMapping.level1) {
+          updateFields[columnMapping.level1] = update.level1;
+        } else {
+          console.warn(`Колонка level1 не найдена в таблице ${CONFIG.TABLE_NAME}`);
+        }
+
+        if (columnMapping.level2) {
+          updateFields[columnMapping.level2] = update.level2;
+        } else {
+          console.warn(`Колонка level2 не найдена в таблице ${CONFIG.TABLE_NAME}`);
+        }
+
+        if (columnMapping.level3) {
+          updateFields[columnMapping.level3] = update.level3;
+        } else {
+          console.warn(`Колонка level3 не найдена в таблице ${CONFIG.TABLE_NAME}`);
+        }
+
+        // Если нет ни одной колонки для обновления, возвращаем пустое действие
+        if (Object.keys(updateFields).length === 0) {
+          console.error('Нет подходящих колонок для обновления уровней групп');
+          return null;
+        }
+
+        return [
+          'UpdateRecord',
+          CONFIG.TABLE_NAME,
+          update.rowId,
+          updateFields
+        ];
+      }).filter(action => action !== null); // Фильтруем null действия
+
+      if (actions.length > 0) {
+        await grist.docApi.applyUserActions(actions);
+      } else {
+        console.warn('Нет действий для обновления уровней групп');
+      }
     } catch (error) {
       console.error('Ошибка при пакетном обновлении групп:', error);
       throw error;
