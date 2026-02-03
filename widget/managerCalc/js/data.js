@@ -116,6 +116,15 @@ const DataModule = {
     const columnMapping = this.autoDetectColumnNames(tableData);
     console.log('transformTableData: автоматически определенные колонки:', columnMapping);
 
+    // Проверим, какие колонки были найдены и какие значения они содержат
+    for (const [logicalName, actualName] of Object.entries(columnMapping)) {
+      if (actualName && tableData[actualName]) {
+        console.log(`transformTableData: колонка ${logicalName} -> ${actualName}, пример значения: "${tableData[actualName][0]}"`);
+      } else {
+        console.log(`transformTableData: колонка ${logicalName} -> НЕ НАЙДЕНА`);
+      }
+    }
+
     const devices = [];
     const rowCount = tableData.id ? tableData.id.length : 0;
     console.log(`transformTableData: найдено ${rowCount} записей`);
@@ -157,7 +166,7 @@ const DataModule = {
     const mapping = {};
 
     // Поиск колонки с названием устройства
-    const deviceNameVariants = ['deviceName', 'name', 'device', 'DeviceName', 'NAME', 'Device'];
+    const deviceNameVariants = ['deviceName', 'name', 'device', 'DeviceName', 'NAME', 'Device', 'realnamedev', 'RealNameDev', 'realNameDev'];
     mapping.deviceName = this.findBestMatch(columnNames, deviceNameVariants);
 
     // Поиск колонки с родительским ID
@@ -177,26 +186,37 @@ const DataModule = {
     mapping.fullpath = this.findBestMatch(columnNames, fullpathVariants);
 
     // Поиск колонки с именем головного устройства
-    const headDeviceNameVariants = ['HeadDeviceName', 'headDeviceName', 'head_device_name', 'Head_Device_Name', 'headDevice'];
+    const headDeviceNameVariants = ['HeadDeviceName', 'headDeviceName', 'head_device_name', 'Head_Device_Name', 'headDevice', 'HeadDeviceName'];
     mapping.headDeviceName = this.findBestMatch(columnNames, headDeviceNameVariants);
 
     // Поиск колонки с NG головным устройством
-    const ngHeadDeviceVariants = ['NGHeadDevice', 'ngHeadDevice', 'ng_head_device', 'NG_Head_Device', 'nghead'];
+    const ngHeadDeviceVariants = ['NGHeadDevice', 'ngHeadDevice', 'ng_head_device', 'NG_Head_Device', 'nghead', 'NGHeadDevice'];
     mapping.ngHeadDevice = this.findBestMatch(columnNames, ngHeadDeviceVariants);
 
     // Поиск колонки с базовым именем НМО
-    const nmoBaseNameVariants = ['NMO_BaseName', 'nmoBaseName', 'nmo_base_name', 'NMOBaseName', 'nmobase'];
+    const nmoBaseNameVariants = ['NMO_BaseName', 'nmoBaseName', 'nmo_base_name', 'NMOBaseName', 'nmobase', 'NMO_BaseName'];
     mapping.nmoBaseName = this.findBestMatch(columnNames, nmoBaseNameVariants);
 
     // Поиск колонок уровней
-    const level1Variants = ['1level', 'level1', 'Level1', 'level_1', 'Level_1', 'first_level'];
+    const level1Variants = ['1level', 'level1', 'Level1', 'level_1', 'Level_1', 'first_level', 'level_1_', 'Level1_'];
     mapping.level1 = this.findBestMatch(columnNames, level1Variants);
 
-    const level2Variants = ['2level', 'level2', 'Level2', 'level_2', 'Level_2', 'second_level'];
+    const level2Variants = ['2level', 'level2', 'Level2', 'level_2', 'Level_2', 'second_level', 'level_2_', 'Level2_'];
     mapping.level2 = this.findBestMatch(columnNames, level2Variants);
 
-    const level3Variants = ['3level', 'level3', 'Level3', 'level_3', 'Level_3', 'third_level'];
+    const level3Variants = ['3level', 'level3', 'Level3', 'level_3', 'Level_3', 'third_level', 'level_3_', 'Level3_'];
     mapping.level3 = this.findBestMatch(columnNames, level3Variants);
+
+    // Проверяем, все ли колонки были найдены, и если нет - используем резервный поиск
+    if (!mapping.deviceName) {
+      mapping.deviceName = this.findFallbackColumn(tableData, 'deviceName');
+    }
+    if (!mapping.parentId) {
+      mapping.parentId = this.findFallbackColumn(tableData, 'parentId');
+    }
+    if (!mapping.canBeHead) {
+      mapping.canBeHead = this.findFallbackColumn(tableData, 'canBeHead');
+    }
 
     return mapping;
   },
@@ -225,6 +245,44 @@ const DataModule = {
     }
 
     // Если ничего не найдено, возвращаем undefined
+    return undefined;
+  },
+
+  /**
+   * Находит наиболее подходящую колонку для типа данных, если точные совпадения не найдены
+   * @param {Object} tableData - Данные таблицы
+   * @param {string} columnType - Тип колонки для поиска
+   * @returns {string|undefined} Найденное имя колонки или undefined
+   */
+  findFallbackColumn(tableData, columnType) {
+    const columnNames = Object.keys(tableData).filter(name => name !== 'id' && name !== 'manualSort'); // Исключаем служебные колонки
+
+    for (const colName of columnNames) {
+      const sampleValue = tableData[colName][0]; // Берем первый элемент для проверки
+
+      switch(columnType) {
+        case 'deviceName':
+          // Ищем колонку с текстовыми значениями, содержащими буквы (включая кириллицу)
+          if (typeof sampleValue === 'string' && sampleValue.trim() !== '' &&
+              (/[a-zA-Zа-яА-ЯЁё]/.test(sampleValue) || sampleValue.includes(' '))) {
+            return colName;
+          }
+          break;
+        case 'parentId':
+          // Ищем колонку с числовыми значениями или null/undefined
+          if (typeof sampleValue === 'number' || sampleValue === null || sampleValue === undefined) {
+            return colName;
+          }
+          break;
+        case 'canBeHead':
+          // Ищем колонку с булевыми значениями или числами 0/1
+          if (typeof sampleValue === 'boolean' || (typeof sampleValue === 'number' && [0, 1].includes(sampleValue))) {
+            return colName;
+          }
+          break;
+      }
+    }
+
     return undefined;
   },
 
