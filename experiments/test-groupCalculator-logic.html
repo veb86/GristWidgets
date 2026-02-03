@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест логики GroupCalculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .test-case {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f5f5f5;
+      border-left: 3px solid #007bff;
+    }
+
+    .success {
+      border-left-color: #28a745;
+    }
+
+    .error {
+      border-left-color: #dc3545;
+      background: #ffe6e6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 3px;
+    }
+
+    .result.pass {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .result.fail {
+      background: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <h1>Тест логики расчёта электрических групп</h1>
+
+  <div id="test-results"></div>
+
+  <!-- Подключаем модули -->
+  <script src="../widget/managerCalc/js/config.js"></script>
+  <script src="../widget/managerCalc/js/groupCalculator.js"></script>
+
+  <script>
+    // Тестовые данные согласно примеру из задачи
+    const testDevices = [
+      {
+        rowId: 1,
+        nmoBaseName: 'ВРУ',
+        headDeviceName: '',
+        ngHeadDevice: 'Группа ВРУ',
+        onlyGUpath: 'ВРУ',
+        level1: '',
+        level2: '',
+        level3: ''
+      },
+      {
+        rowId: 2,
+        nmoBaseName: 'ГРЩ',
+        headDeviceName: 'ВРУ',
+        ngHeadDevice: 'Группа ГРЩ',
+        onlyGUpath: 'ВРУ\\ГРЩ',
+        level1: '',
+        level2: '',
+        level3: ''
+      },
+      {
+        rowId: 3,
+        nmoBaseName: 'ЩР',
+        headDeviceName: 'ГРЩ',
+        ngHeadDevice: 'Группа ЩР',
+        onlyGUpath: 'ВРУ\\ГРЩ',
+        level1: '',
+        level2: '',
+        level3: ''
+      },
+      {
+        rowId: 4,
+        nmoBaseName: 'ЩУ',
+        headDeviceName: 'ЩР',
+        ngHeadDevice: 'Группа ЩУ',
+        onlyGUpath: 'ВРУ\\ГРЩ',
+        level1: '',
+        level2: '',
+        level3: ''
+      },
+      {
+        rowId: 5,
+        nmoBaseName: 'МФУ',
+        headDeviceName: 'ЩУ',
+        ngHeadDevice: '',
+        onlyGUpath: 'ВРУ\\ГРЩ',
+        level1: '',
+        level2: '',
+        level3: ''
+      }
+    ];
+
+    // Ожидаемые результаты для устройства МФУ
+    const expectedResults = {
+      МФУ: {
+        level1: 'Группа ГРЩ',
+        level2: 'Группа ЩР',
+        level3: 'Группа ЩУ'
+      },
+      ЩУ: {
+        level1: 'Группа ГРЩ',
+        level2: 'Группа ЩР',
+        level3: ''
+      },
+      ЩР: {
+        level1: 'Группа ГРЩ',
+        level2: '',
+        level3: ''
+      }
+    };
+
+    // Функция для запуска тестов
+    function runTests() {
+      const resultsDiv = document.getElementById('test-results');
+      let html = '';
+
+      // Тест 1: Проверка разбора пути onlyGUpath
+      html += '<div class="test-section">';
+      html += '<h2>Тест 1: Разбор пути onlyGUpath</h2>';
+
+      const path = 'ВРУ\\ГРЩ\\ЩР';
+      const parsed = GroupCalculator.parseOnlyGUPath(path);
+      const expected = ['ВРУ', 'ГРЩ', 'ЩР'];
+
+      const test1Pass = JSON.stringify(parsed) === JSON.stringify(expected);
+      html += `<div class="result ${test1Pass ? 'pass' : 'fail'}">`;
+      html += `Путь: "${path}"<br>`;
+      html += `Результат: [${parsed.join(', ')}]<br>`;
+      html += `Ожидалось: [${expected.join(', ')}]<br>`;
+      html += `<strong>${test1Pass ? '✓ PASSED' : '✗ FAILED'}</strong>`;
+      html += '</div>';
+      html += '</div>';
+
+      // Тест 2: Проверка isLastInPath
+      html += '<div class="test-section">';
+      html += '<h2>Тест 2: Проверка isLastInPath</h2>';
+
+      const pathElements = ['ВРУ', 'ГРЩ'];
+      const test2a = GroupCalculator.isLastInPath('ГРЩ', pathElements);
+      const test2b = !GroupCalculator.isLastInPath('ВРУ', pathElements);
+      const test2c = !GroupCalculator.isLastInPath('ЩР', pathElements);
+
+      html += `<div class="result ${test2a ? 'pass' : 'fail'}">`;
+      html += `isLastInPath('ГРЩ', ['ВРУ', 'ГРЩ']) = ${test2a} (ожидается true)<br>`;
+      html += `<strong>${test2a ? '✓ PASSED' : '✗ FAILED'}</strong>`;
+      html += '</div>';
+
+      html += `<div class="result ${test2b ? 'pass' : 'fail'}">`;
+      html += `isLastInPath('ВРУ', ['ВРУ', 'ГРЩ']) = ${!test2b} (ожидается false)<br>`;
+      html += `<strong>${test2b ? '✓ PASSED' : '✗ FAILED'}</strong>`;
+      html += '</div>';
+      html += '</div>';
+
+      // Тест 3: Расчёт уровней для МФУ
+      html += '<div class="test-section">';
+      html += '<h2>Тест 3: Расчёт уровней для устройства МФУ</h2>';
+
+      const devicesByBaseName = GroupCalculator.createDeviceMapByBaseName(testDevices);
+      const mfuDevice = testDevices.find(d => d.nmoBaseName === 'МФУ');
+      const mfuLevels = GroupCalculator.calculateLevelsForDevice(mfuDevice, devicesByBaseName);
+
+      const test3Pass = (
+        mfuLevels.level1 === expectedResults.МФУ.level1 &&
+        mfuLevels.level2 === expectedResults.МФУ.level2 &&
+        mfuLevels.level3 === expectedResults.МФУ.level3
+      );
+
+      html += `<div class="result ${test3Pass ? 'pass' : 'fail'}">`;
+      html += `<strong>Устройство: МФУ</strong><br>`;
+      html += `onlyGUpath: ${mfuDevice.onlyGUpath}<br>`;
+      html += `HeadDeviceName: ${mfuDevice.headDeviceName}<br><br>`;
+      html += `Результат:<br>`;
+      html += `1level: "${mfuLevels.level1}" (ожидалось: "${expectedResults.МФУ.level1}")<br>`;
+      html += `2level: "${mfuLevels.level2}" (ожидалось: "${expectedResults.МФУ.level2}")<br>`;
+      html += `3level: "${mfuLevels.level3}" (ожидалось: "${expectedResults.МФУ.level3}")<br>`;
+      html += `<strong>${test3Pass ? '✓ PASSED' : '✗ FAILED'}</strong>`;
+      html += '</div>';
+      html += '</div>';
+
+      // Тест 4: Расчёт для всех устройств
+      html += '<div class="test-section">';
+      html += '<h2>Тест 4: Расчёт уровней для всех устройств</h2>';
+
+      const updates = GroupCalculator.calculateAllGroups(testDevices, null);
+
+      html += '<table>';
+      html += '<tr><th>Устройство</th><th>onlyGUpath</th><th>1level</th><th>2level</th><th>3level</th></tr>';
+
+      testDevices.forEach(device => {
+        const update = updates.find(u => u.rowId === device.rowId);
+        const levels = update ? {
+          level1: update.level1,
+          level2: update.level2,
+          level3: update.level3
+        } : GroupCalculator.calculateLevelsForDevice(device, devicesByBaseName);
+
+        html += `<tr>`;
+        html += `<td>${device.nmoBaseName}</td>`;
+        html += `<td>${device.onlyGUpath}</td>`;
+        html += `<td>${levels.level1}</td>`;
+        html += `<td>${levels.level2}</td>`;
+        html += `<td>${levels.level3}</td>`;
+        html += `</tr>`;
+      });
+
+      html += '</table>';
+      html += `<p>Обновлено устройств: ${updates.length} из ${testDevices.length}</p>`;
+      html += '</div>';
+
+      // Тест 5: Валидация данных
+      html += '<div class="test-section">';
+      html += '<h2>Тест 5: Валидация данных</h2>';
+
+      const validation = GroupCalculator.validateData(testDevices);
+
+      html += `<div class="result ${validation.isValid ? 'pass' : 'fail'}">`;
+      html += `Валидация: ${validation.isValid ? 'Пройдена' : 'Не пройдена'}<br>`;
+      if (!validation.isValid) {
+        html += `Ошибки:<br>`;
+        validation.errors.forEach(err => {
+          html += `- ${err}<br>`;
+        });
+      }
+      html += `<strong>${validation.isValid ? '✓ PASSED' : '✗ FAILED'}</strong>`;
+      html += '</div>';
+      html += '</div>';
+
+      resultsDiv.innerHTML = html;
+    }
+
+    // Запускаем тесты при загрузке страницы
+    window.addEventListener('load', runTests);
+  </script>
+</body>
+</html>

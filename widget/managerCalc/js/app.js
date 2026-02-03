@@ -18,8 +18,9 @@ const App = {
       // Инициализируем UI
       UIModule.init();
 
-      // Устанавливаем обработчик кнопки
+      // Устанавливаем обработчики кнопок
       UIModule.setButtonHandler(() => this.handleCalculatePaths());
+      UIModule.setGroupsButtonHandler(() => this.handleCalculateGroups());
 
       console.log('Виджет managerCalc успешно инициализирован');
     } catch (error) {
@@ -53,8 +54,8 @@ const App = {
    */
   async handleCalculatePaths() {
     try {
-      // Блокируем кнопку во время расчёта
-      UIModule.disableButton();
+      // Блокируем обе кнопки во время расчёта
+      UIModule.disableAllButtons();
       UIModule.hideStatus();
       UIModule.showProgress();
 
@@ -68,7 +69,7 @@ const App = {
       if (devices.length === 0) {
         UIModule.showStatus('Таблица AllDevice пуста', 'info');
         UIModule.hideProgress();
-        UIModule.enableButton();
+        UIModule.enableAllButtons();
         return;
       }
 
@@ -80,7 +81,7 @@ const App = {
           validation.errors.join('\n');
         UIModule.showStatus(errorMessage, 'error');
         UIModule.hideProgress();
-        UIModule.enableButton();
+        UIModule.enableAllButtons();
         console.error('Ошибки валидации:', validation.errors);
         return;
       }
@@ -100,7 +101,7 @@ const App = {
           'info'
         );
         UIModule.hideProgress();
-        UIModule.enableButton();
+        UIModule.enableAllButtons();
         return;
       }
 
@@ -121,9 +122,9 @@ const App = {
         'error'
       );
     } finally {
-      // Разблокируем кнопку и скрываем прогресс
+      // Разблокируем кнопки и скрываем прогресс
       UIModule.hideProgress();
-      UIModule.enableButton();
+      UIModule.enableAllButtons();
     }
   },
 
@@ -141,6 +142,107 @@ const App = {
       const batch = updates.slice(start, end);
 
       await DataModule.updateDevicePathsBatch(batch);
+
+      // Небольшая задержка между пакетами
+      if (i < totalBatches - 1) {
+        await this.delay(CONFIG.UPDATE_DELAY);
+      }
+    }
+  },
+
+  /**
+   * Обработчик нажатия кнопки "Заполнить электрические группы"
+   */
+  async handleCalculateGroups() {
+    try {
+      // Блокируем обе кнопки во время расчёта
+      UIModule.disableAllButtons();
+      UIModule.hideStatus();
+      UIModule.showProgress();
+
+      // Загружаем данные из таблицы
+      UIModule.updateProgress(0, 0, 0);
+      const rawData = await DataModule.loadAllDevices();
+
+      // Преобразуем данные в удобный формат
+      const devices = DataModule.transformTableData(rawData);
+
+      if (devices.length === 0) {
+        UIModule.showStatus('Таблица AllDevice пуста', 'info');
+        UIModule.hideProgress();
+        UIModule.enableAllButtons();
+        return;
+      }
+
+      // Валидация данных
+      const validation = GroupCalculator.validateData(devices);
+
+      if (!validation.isValid) {
+        const errorMessage = 'Обнаружены ошибки в данных:\n' +
+          validation.errors.join('\n');
+        UIModule.showStatus(errorMessage, 'error');
+        UIModule.hideProgress();
+        UIModule.enableAllButtons();
+        console.error('Ошибки валидации:', validation.errors);
+        return;
+      }
+
+      // Рассчитываем группы для всех устройств
+      const updates = GroupCalculator.calculateAllGroups(
+        devices,
+        (percent, current, total) => {
+          UIModule.updateProgress(percent, current, total);
+        }
+      );
+
+      // Если нет изменений
+      if (updates.length === 0) {
+        UIModule.showStatus(
+          'Все группы уже актуальны, обновление не требуется',
+          'info'
+        );
+        UIModule.hideProgress();
+        UIModule.enableAllButtons();
+        return;
+      }
+
+      // Обновляем данные в таблице пакетами
+      await this.applyGroupUpdatesInBatches(updates);
+
+      // Показываем сообщение об успехе
+      UIModule.showStatus(
+        `Успешно обновлено групп: ${updates.length} из ${devices.length}`,
+        'success'
+      );
+
+      console.log(`Расчёт групп завершён. Обновлено записей: ${updates.length}`);
+    } catch (error) {
+      console.error('Ошибка при расчёте групп:', error);
+      UIModule.showStatus(
+        `Ошибка: ${error.message}`,
+        'error'
+      );
+    } finally {
+      // Разблокируем кнопки и скрываем прогресс
+      UIModule.hideProgress();
+      UIModule.enableAllButtons();
+    }
+  },
+
+  /**
+   * Применяет обновления групп к таблице пакетами
+   * @param {Array<Object>} updates - Массив обновлений
+   * @returns {Promise<void>}
+   */
+  async applyGroupUpdatesInBatches(updates) {
+    const totalBatches = Math.ceil(updates.length / CONFIG.BATCH_SIZE);
+
+    for (let i = 0; i < totalBatches; i++) {
+      const start = i * CONFIG.BATCH_SIZE;
+      const end = Math.min(start + CONFIG.BATCH_SIZE, updates.length);
+      const batch = updates.slice(start, end);
+
+      await DataModule.updateDeviceGroupsBatch(batch);
 
       // Небольшая задержка между пакетами
       if (i < totalBatches - 1) {

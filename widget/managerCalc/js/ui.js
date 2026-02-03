@@ -7,6 +7,7 @@ const UIModule = {
   // Элементы DOM
   elements: {
     calcButton: null,
+    calcGroupsButton: null,
     statusMessage: null,
     progressInfo: null,
     progressFill: null,
@@ -18,6 +19,7 @@ const UIModule = {
    */
   init() {
     this.elements.calcButton = document.getElementById('calc-paths-btn');
+    this.elements.calcGroupsButton = document.getElementById('calc-groups-btn');
     this.elements.statusMessage = document.getElementById('status-message');
     this.elements.progressInfo = document.getElementById('progress-info');
     this.elements.progressFill = document.getElementById('progress-fill');
@@ -72,24 +74,62 @@ const UIModule = {
   },
 
   /**
-   * Блокирует кнопку расчёта
+   * Блокирует кнопку расчёта путей
    */
   disableButton() {
     this.elements.calcButton.disabled = true;
   },
 
   /**
-   * Разблокирует кнопку расчёта
+   * Разблокирует кнопку расчёта путей
    */
   enableButton() {
     this.elements.calcButton.disabled = false;
   },
 
   /**
-   * Устанавливает обработчик клика на кнопку
+   * Блокирует кнопку расчёта групп
+   */
+  disableGroupsButton() {
+    this.elements.calcGroupsButton.disabled = true;
+  },
+
+  /**
+   * Разблокирует кнопку расчёта групп
+   */
+  enableGroupsButton() {
+    this.elements.calcGroupsButton.disabled = false;
+  },
+
+  /**
+   * Блокирует обе кнопки
+   */
+  disableAllButtons() {
+    this.disableButton();
+    this.disableGroupsButton();
+  },
+
+  /**
+   * Разблокирует обе кнопки
+   */
+  enableAllButtons() {
+    this.enableButton();
+    this.enableGroupsButton();
+  },
+
+  /**
+   * Устанавливает обработчик клика на кнопку расчёта путей
    * @param {Function} handler - Функция-обработчик
    */
   setButtonHandler(handler) {
     this.elements.calcButton.addEventListener('click', handler);
+  },
+
+  /**
+   * Устанавливает обработчик клика на кнопку расчёта групп
+   * @param {Function} handler - Функция-обработчик
+   */
+  setGroupsButtonHandler(handler) {
+    this.elements.calcGroupsButton.addEventListener('click', handler);
   }
 };
