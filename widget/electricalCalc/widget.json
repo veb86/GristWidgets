@@ -1,0 +1,15 @@
+{
+  "name": "ElectricalCalc",
+  "version": "1.0.0",
+  "description": "Виджет для расчёта электрических устройств",
+  "main": "index.html",
+  "gristPlugin": {
+    "type": "customWidget",
+    "widget": {
+      "name": "ElectricalCalc",
+      "sections": ["single", "detail", "recordCard"],
+      "supportsManualResize": true,
+      "supportsManualColumnSelection": false
+    }
+  }
+}
