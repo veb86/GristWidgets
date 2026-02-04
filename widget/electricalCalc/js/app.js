@@ -84,7 +84,9 @@ var AppModule = (function() {
       const shieldName = DataModule.getCachedShieldName();
       const message = shieldName
         ? `Загружено ${data.length} записей для щита "${shieldName}"`
-        : `Загружено ${data.length} записей`;
+        : data.length > 0
+          ? `Загружено ${data.length} записей`
+          : 'Данные не найдены';
 
       UIModule.showStatusMessage(message, 'success');
 
@@ -96,12 +98,14 @@ var AppModule = (function() {
       UIModule.showStatusMessage(
         `Ошибка загрузки данных: ${error.message}`,
         'error',
-        5000
+        10000  // Увеличиваем время отображения ошибки
       );
 
       // Показываем пустую таблицу
       TableModule.updateTableData([]);
       UIModule.clearInfoPanel();
+
+      // Не продолжаем выполнение, оставляем сообщение об ошибке
     }
   }
 
@@ -160,7 +164,7 @@ var AppModule = (function() {
 
       // Инициализируем Grist API
       grist.ready({
-        requiredAccess: 'read table',
+        requiredAccess: 'full',
         onEditOptions: handleOptionsChange
       });
 
@@ -169,8 +173,8 @@ var AppModule = (function() {
 
       // Загружаем начальные данные с небольшой задержкой
       // Это даёт Grist время для полной инициализации
-      setTimeout(() => {
-        loadAndDisplayData();
+      setTimeout(async () => {
+        await loadAndDisplayData();
       }, 500);
 
       initialized = true;

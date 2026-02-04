@@ -19,19 +19,19 @@ var ConfigModule = (function() {
    * @type {Object}
    */
   let currentConfig = {
-    // Имя таблицы SYSTYM для получения параметров
-    systemTable: 'SYSTYM',
+    // Имя таблицы SYSTEM для получения параметров
+    systemTable: 'SYSTEM',
 
     // Имя таблицы AllDevGroup для получения данных устройств
-    dataTable: 'AllDevGroup',
+    dataTable: 'Table1_summary_Function_HeadDeviceName_NMO_BaseName_Power_Voltage_cosf_feeder_fullpath_level1_level2_level3_onlyGUpath_parentId_realnamedev',
 
-    // Имя параметра в таблице SYSTYM для поиска имени щита
+    // Имя параметра в таблице SYSTEM для поиска имени щита
     shieldParamName: 'ShieldName',
 
-    // Столбец в SYSTYM, где находятся имена параметров
+    // Столбец в SYSTEM, где находятся имена параметров
     systemFnameColumn: 'fname',
 
-    // Столбец в SYSTYM, где находятся значения параметров
+    // Столбец в SYSTEM, где находятся значения параметров
     systemFvalueColumn: 'fvalue',
 
     // Столбец в AllDevGroup для фильтрации по пути

@@ -49,6 +49,12 @@ var DataModule = (function() {
     try {
       const tableId = await getTableIdByName(tableName);
       if (!tableId) {
+        // Выводим список всех доступных таблиц для диагностики
+        const tables = await grist.docApi.listTables();
+        console.log('Все доступные таблицы в документе:', tables);
+        const tableNames = tables.map(t => t.id || t.tableId || t.name || 'unknown').filter(name => name !== 'unknown');
+        console.log('Имена таблиц:', tableNames);
+
         throw new Error(`Таблица "${tableName}" не найдена`);
       }
 
@@ -67,9 +73,40 @@ var DataModule = (function() {
    */
   async function getTableIdByName(tableName) {
     try {
-      const tables = await grist.docApi.listTables();
-      const table = tables.find(t => t.id === tableName);
-      return table ? table.id : null;
+      // В Grist часто имя таблицы можно использовать напрямую как ID
+      // Попробуем получить список таблиц для проверки
+      try {
+        const tables = await grist.docApi.listTables();
+        console.log('Таблицы из listTables():', tables); // Для отладки
+
+        // Ищем таблицу по имени, проверяя различные возможные свойства
+        const table = tables.find(t => {
+          // Проверяем различные возможные поля, в которых может быть имя таблицы
+          return (t && (
+            t.id === tableName ||
+            t.tableId === tableName ||
+            (t.fields && t.fields.id === tableName) ||
+            (t.primaryViewId && t.primaryViewId === tableName) ||
+            (t._id === tableName) ||  // Иногда используется с подчеркиванием
+            (t.name === tableName)    // Иногда имя может быть в поле name
+          ));
+        });
+
+        console.log('Найденная таблица для "' + tableName + '":', table); // Для отладки
+
+        if (table) {
+          // Возвращаем первый доступный идентификатор
+          return table.id || table.tableId || table._id || (table.fields && table.fields.id);
+        }
+      } catch (listError) {
+        console.warn('Ошибка при получении списка таблиц:', listError);
+        // Если listTables не работает, просто возвращаем имя таблицы как ID
+        return tableName;
+      }
+
+      // Если таблица не найдена в списке, возвращаем имя как ID
+      // В Grist часто внешнее имя таблицы можно использовать как внутренний ID
+      return tableName;
     } catch (error) {
       console.error('Ошибка при поиске таблицы:', error);
       return null;
@@ -145,6 +182,7 @@ var DataModule = (function() {
       console.log(`Загрузка имени щита из таблицы "${systemTableName}"...`);
 
       const rawData = await fetchTableData(systemTableName);
+
       const records = transformGristData(rawData);
 
       console.log(`Загружено ${records.length} записей из таблицы ${systemTableName}`);
@@ -168,7 +206,7 @@ var DataModule = (function() {
       return shieldName;
     } catch (error) {
       console.error('Ошибка получения имени щита:', error);
-      return null;
+      throw error; // Прерываем выполнение кода при ошибке
     }
   }
 
@@ -194,6 +232,7 @@ var DataModule = (function() {
 
       // Загружаем данные из таблицы AllDevGroup
       const rawData = await fetchTableData(dataTableName);
+
       const allRecords = transformGristData(rawData);
 
       console.log(`Загружено ${allRecords.length} записей из таблицы ${dataTableName}`);
@@ -207,6 +246,7 @@ var DataModule = (function() {
       // Фильтруем записи по правилу: последняя часть пути = имя щита
       const filteredRecords = allRecords.filter(record => {
         const path = record[pathColumn];
+        if (!path) return false; // Пропускаем записи без пути
         return matchesShieldPath(path, shieldName, separator);
       });
 
@@ -218,7 +258,7 @@ var DataModule = (function() {
       return filteredRecords;
     } catch (error) {
       console.error('Ошибка загрузки данных:', error);
-      throw error;
+      throw error; // Прерываем выполнение кода при ошибке
     }
   }
 
