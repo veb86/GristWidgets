@@ -42,7 +42,7 @@ var GristAPIModule = (function() {
         // Регистрация виджета с необходимыми правами доступа
         // ВАЖНО: Указываем точные имена колонок для корректной работы с Grist
         grist.ready({
-          requiredAccess: 'read table',
+          requiredAccess: 'full',
           columns: [
             { name: 'NMO_BaseName', title: 'ID устройства' },
             { name: 'HeadDeviceName', title: 'Родительское устройство' },
