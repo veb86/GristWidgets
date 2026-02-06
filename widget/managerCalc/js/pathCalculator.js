@@ -131,17 +131,13 @@ const PathCalculator = {
 
     // Используем NMO_BaseName для построения пути, если он доступен, иначе deviceName
     const deviceNameForPath = this.getDeviceNameForPath(device);
-    console.log(`buildOnlyGUPath: processing device "${deviceNameForPath}", parentId=${device.parentId}, canBeHead=${device.canBeHead}, headDeviceName="${device.headDeviceName}"`);
-
-    // Проверяем, является ли устройство головным по имени головного устройства
-    const isHeadByDeviceName = device.headDeviceName && deviceNameForPath === device.headDeviceName;
-    const canBeHead = device.canBeHead || isHeadByDeviceName;
-
-    console.log(`buildOnlyGUPath: устройство "${deviceNameForPath}" может быть головным: ${canBeHead} (canBeHead: ${device.canBeHead}, isHeadByDeviceName: ${isHeadByDeviceName})`);
+    console.log(`buildOnlyGUPath: processing device "${deviceNameForPath}", parentId=${device.parentId}`);
 
     // Если нет родителя (null, undefined или -1) - это корневое устройство
     if (!device.parentId || device.parentId === -1) {
-      // Для корневого устройства используем специальное значение "root" если оно может быть головным
+      // Проверяем, может ли корневое устройство быть головным
+      const isHeadByDeviceName = device.headDeviceName && deviceNameForPath === device.headDeviceName;
+      const canBeHead = device.canBeHead || isHeadByDeviceName;
       const path = canBeHead ? "root" : '';
       this.cache.onlyGUpath.set(deviceId, path);
       console.log(`buildOnlyGUPath: root device "${deviceNameForPath}", canBeHead=${canBeHead}, path="${path}"`);
@@ -151,26 +147,37 @@ const PathCalculator = {
     // Рекурсивно строим путь от родителя
     const parentPath = this.buildOnlyGUPath(device.parentId, deviceMap);
 
-    // Формируем путь с учётом флага canBeHead
+    // Получаем информацию о родительском устройстве
+    const parentDevice = deviceMap.get(device.parentId);
+
+    if (!parentDevice) {
+      console.log(`buildOnlyGUPath: parent device with id ${device.parentId} not found`);
+      // Если родитель не найден, возвращаем путь родителя как есть
+      this.cache.onlyGUpath.set(deviceId, parentPath);
+      return parentPath;
+    }
+
+    // Проверяем, может ли родитель быть головным (т.к. путь формируется до родителя текущего устройства)
+    const parentIsHeadByDeviceName = parentDevice.headDeviceName && this.getDeviceNameForPath(parentDevice) === parentDevice.headDeviceName;
+    const parentCanBeHead = parentDevice.canBeHead || parentIsHeadByDeviceName;
+
     let onlyGUPath;
 
-    // Если родитель - корень и его путь "root", то для потомков используем настоящее имя корня
-    let actualParentName = parentPath;
-    if (parentPath === "root") {
-      actualParentName = this.getParentDeviceNameForPath(deviceId, deviceMap);
+    // Если родитель может быть головным, добавляем его к пути родителя
+    if (parentCanBeHead) {
+      // Если путь родителя "root", используем настоящее имя родителя
+      if (parentPath === "root") {
+        onlyGUPath = this.getDeviceNameForPath(parentDevice);
+      } else {
+        // Иначе добавляем имя родителя к пути
+        onlyGUPath = parentPath ? `${parentPath}${CONFIG.PATH_SEPARATOR}${this.getDeviceNameForPath(parentDevice)}` : this.getDeviceNameForPath(parentDevice);
+      }
+    } else {
+      // Если родитель не может быть головным, путь остается как у родителя
+      onlyGUPath = parentPath;
     }
 
-    if (canBeHead) {
-      // Текущее устройство может быть головным - добавляем в путь
-      onlyGUPath = actualParentName
-        ? `${actualParentName}${CONFIG.PATH_SEPARATOR}${deviceNameForPath}`
-        : deviceNameForPath;
-      console.log(`buildOnlyGUPath: device "${deviceNameForPath}" can be head, adding to path: "${onlyGUPath}"`);
-    } else {
-      // Текущее устройство не может быть головным - пропускаем
-      onlyGUPath = actualParentName;
-      console.log(`buildOnlyGUPath: device "${deviceNameForPath}" cannot be head, skipping, path remains: "${onlyGUPath}"`);
-    }
+    console.log(`buildOnlyGUPath: для устройства "${deviceNameForPath}" (родитель "${this.getDeviceNameForPath(parentDevice)}", может быть головным: ${parentCanBeHead}), путь: "${onlyGUPath}"`);
 
     // Сохраняем в кэш
     this.cache.onlyGUpath.set(deviceId, onlyGUPath);
