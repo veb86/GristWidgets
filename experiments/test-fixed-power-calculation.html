@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест исправленного Power Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .success { color: #28a745; font-weight: bold; }
+    .error { color: #dc3545; font-weight: bold; }
+    .result { margin: 10px 0; padding: 8px; border-radius: 4px; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Тест исправленного расчёта мощностей</h1>
+    <button onclick="runTest()">Запустить тест</button>
+    <div id="results"></div>
+  </div>
+
+  <script src="../widget/managerCalc/js/powerCalculator.js"></script>
+
+  <script>
+    // Простой тестовый случай для ШУ1
+    const testData = [
+      // Дочерние устройства ШУ1
+      { rowId: 1, nmoBaseName: 'ЯУ1', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 2, nmoBaseName: 'ЯУ3', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 3, nmoBaseName: 'ЯУ77', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 4, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 5, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 6, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 7, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 8, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 9, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 10, nmoBaseName: 'EL77', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 11, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      
+      // Внуки ШУ1 (дочерние ЯУ1)
+      { rowId: 12, nmoBaseName: 'Дв1', headDeviceName: 'ЯУ1', power: 1 },
+      { rowId: 13, nmoBaseName: 'Дв2', headDeviceName: 'ЯУ1', power: 1 },
+      
+      // Внуки ШУ1 (дочерние ЯУ3)
+      { rowId: 14, nmoBaseName: 'Дв5', headDeviceName: 'ЯУ3', power: 1 },
+      { rowId: 15, nmoBaseName: 'Дв6', headDeviceName: 'ЯУ3', power: 1 },
+      
+      // Внуки ШУ1 (дочерние ЯУ77)
+      { rowId: 16, nmoBaseName: 'Дв771', headDeviceName: 'ЯУ77', power: 1 },
+      { rowId: 17, nmoBaseName: 'Дв772', headDeviceName: 'ЯУ77', power: 1 },
+      
+      // Само устройство ШУ1 (текущая неправильная мощность)
+      { rowId: 18, nmoBaseName: 'ШУ1', headDeviceName: 'ЩР1', power: 6.240000000000002 }
+    ];
+
+    function runTest() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<div class="result">Выполнение теста...</div>';
+      
+      const deviceMap = PowerCalculator.createDeviceMap(testData);
+      const childrenMap = PowerCalculator.createChildrenMap(testData);
+      
+      let output = '<h2>Расчёт мощности ШУ1</h2>';
+      
+      // Показываем все дочерние устройства ШУ1
+      const shU1Children = childrenMap.get('ШУ1') || [];
+      output += '<h3>Прямые дочерние устройства ШУ1:</h3>';
+      output += '<table><tr><th>Устройство</th><th>Мощность</th><th>Дочерние</th></tr>';
+      
+      let directChildrenPower = 0;
+      shU1Children.forEach(child => {
+        const childPower = parseFloat(child.power) || 0;
+        directChildrenPower += childPower;
+        
+        // Проверяем, есть ли у этого ребёнка свои дочерние устройства
+        const grandChildren = childrenMap.get(child.nmoBaseName) || [];
+        const grandChildrenPower = grandChildren.reduce((sum, gc) => 
+          sum + (parseFloat(gc.power) || 0), 0);
+        
+        output += `<tr>
+          <td>${child.nmoBaseName}</td>
+          <td>${childPower}</td>
+          <td>${grandChildren.length > 0 ? grandChildrenPower.toFixed(3) : '0'}</td>
+        </tr>`;
+      });
+      output += '</table>';
+      
+      output += `<p>Сумма прямых дочерних: ${directChildrenPower.toFixed(3)}</p>`;
+      
+      // Рассчитываем полную мощность через алгоритм
+      const calculatedPower = PowerCalculator.calculateDevicePower('ШУ1', childrenMap, deviceMap, new Set());
+      output += `<h3>Результат расчёта алгоритма: ${calculatedPower.toFixed(3)}</h3>`;
+      
+      // Ожидаемый результат: 6.18
+      // Прямые дочерние: 2 + 2 + 2 + 0.03*7 = 6 + 0.21 = 6.21
+      // Внуки: 1+1 (ЯУ1) + 1+1 (ЯУ3) + 1+1 (ЯУ77) = 6
+      // Итого: 6.21 + 6 = 12.21 ??? Нет, это не правильно
+      
+      output += '<h3>Детальный разбор:</h3>';
+      output += '<ul>';
+      output += '<li>ЯУ1 (2) + Дв1 (1) + Дв2 (1) = 4</li>';
+      output += '<li>ЯУ3 (2) + Дв5 (1) + Дв6 (1) = 4</li>';
+      output += '<li>ЯУ77 (2) + Дв771 (1) + Дв772 (1) = 4</li>';
+      output += '<li>EL устройства (0.03 * 7) = 0.21</li>';
+      output += '</ul>';
+      output += '<p><strong>Итого ожидаемо: 4 + 4 + 4 + 0.21 = 12.21</strong></p>';
+      
+      // Проверяем вручную
+      let expectedPower = 0;
+      
+      // ЯУ1 и её дети
+      expectedPower += 2; // ЯУ1
+      expectedPower += 1; // Дв1
+      expectedPower += 1; // Дв2
+      
+      // ЯУ3 и её дети
+      expectedPower += 2; // ЯУ3
+      expectedPower += 1; // Дв5
+      expectedPower += 1; // Дв6
+      
+      // ЯУ77 и её дети
+      expectedPower += 2; // ЯУ77
+      expectedPower += 1; // Дв771
+      expectedPower += 1; // Дв772
+      
+      // EL устройства
+      expectedPower += 0.03 * 7; // 7 EL устройств
+      
+      output += `<p><strong>Расчётная сумма: ${expectedPower.toFixed(3)}</strong></p>`;
+      
+      if (Math.abs(calculatedPower - expectedPower) < 0.001) {
+        output += '<div class="result success">✅ Алгоритм работает правильно!</div>';
+      } else {
+        output += '<div class="result error">❌ Алгоритм работает неправильно!</div>';
+      }
+      
+      resultsDiv.innerHTML = output;
+    }
+  </script>
+</body>
+</html>

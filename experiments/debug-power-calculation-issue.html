@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест реальных данных Power Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .result {
+      margin: 10px 0;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .success {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .error {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .problem {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Анализ проблемы с расчётом мощностей</h1>
+    
+    <div class="test-section">
+      <h2>Данные из issue</h2>
+      <button onclick="analyzeProblem()">Проанализировать проблему</button>
+      <div id="analysis-results"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>Детальный расчёт для ШУ1</h2>
+      <button onclick="analyzeShU1()">Проанализировать ШУ1</button>
+      <div id="shu1-results"></div>
+    </div>
+  </div>
+
+  <!-- Подключение модулей -->
+  <script src="../widget/managerCalc/js/powerCalculator.js"></script>
+
+  <script>
+    // Реальные данные из issue с проблемой
+    const realData = [
+      { rowId: 1, nmoBaseName: 'ЩР', headDeviceName: 'ВРУ1', power: 0 },
+      { rowId: 2, nmoBaseName: 'EL5', headDeviceName: 'ЩР', power: 0.03 },
+      { rowId: 3, nmoBaseName: 'EL7', headDeviceName: 'ЩР', power: 0.03 },
+      { rowId: 4, nmoBaseName: 'EL5', headDeviceName: 'ЩР', power: 0.03 },
+      { rowId: 5, nmoBaseName: 'EL6', headDeviceName: 'ЩР', power: 0.03 },
+      { rowId: 6, nmoBaseName: 'Вкл', headDeviceName: 'ЩР', power: 0 },
+      { rowId: 7, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ1', power: 0 },
+      { rowId: 8, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ2', power: 0 },
+      { rowId: 9, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
+      { rowId: 10, nmoBaseName: 'EL3', headDeviceName: 'ЩР1', power: 0.03 },
+      { rowId: 11, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
+      { rowId: 12, nmoBaseName: 'EL2', headDeviceName: 'ЩР1', power: 0.03 },
+      { rowId: 13, nmoBaseName: 'Вкл', headDeviceName: 'ЩР1', power: 0 },
+      { rowId: 14, nmoBaseName: 'ВРУ1', headDeviceName: '???', power: 0 },
+      { rowId: 15, nmoBaseName: 'ВРУ2', headDeviceName: '???', power: 0 },
+      { rowId: 16, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
+      { rowId: 17, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
+      { rowId: 18, nmoBaseName: 'ШУ1', headDeviceName: 'ЩР1', power: 6.240000000000002 },
+      { rowId: 19, nmoBaseName: 'ЯУ1', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 20, nmoBaseName: 'Дв1', headDeviceName: 'ЯУ1', power: 1 },
+      { rowId: 21, nmoBaseName: 'Дв2', headDeviceName: 'ЯУ1', power: 1 },
+      { rowId: 22, nmoBaseName: 'ШУ2', headDeviceName: 'ЩР1', power: 2 },
+      { rowId: 23, nmoBaseName: 'ЯУ2', headDeviceName: 'ШУ2', power: 2 },
+      { rowId: 24, nmoBaseName: 'Дв3', headDeviceName: 'ЯУ2', power: 1 },
+      { rowId: 25, nmoBaseName: 'Дв4', headDeviceName: 'ЯУ2', power: 1 },
+      { rowId: 26, nmoBaseName: 'ЯУ3', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 27, nmoBaseName: 'Дв5', headDeviceName: 'ЯУ3', power: 1 },
+      { rowId: 28, nmoBaseName: 'Дв6', headDeviceName: 'ЯУ3', power: 1 },
+      { rowId: 29, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 30, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 31, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 32, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 33, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 34, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 35, nmoBaseName: 'ЯУ77', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 36, nmoBaseName: 'Дв771', headDeviceName: 'ЯУ77', power: 1 },
+      { rowId: 37, nmoBaseName: 'Дв772', headDeviceName: 'ЯУ77', power: 1 },
+      { rowId: 38, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 39, nmoBaseName: 'EL77', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 40, nmoBaseName: 'ШУ33', headDeviceName: 'ЩР1', power: 2.0599999999999996 },
+      { rowId: 41, nmoBaseName: 'Дв3331', headDeviceName: 'ШУ33', power: 1 },
+      { rowId: 42, nmoBaseName: 'Дв3332', headDeviceName: 'ШУ33', power: 1 },
+      { rowId: 43, nmoBaseName: 'ШУ1345', headDeviceName: 'ЩР1', power: 2 },
+      { rowId: 44, nmoBaseName: 'ЯУ1345', headDeviceName: 'ШУ1345', power: 2 },
+      { rowId: 45, nmoBaseName: 'Дв1345', headDeviceName: 'ЯУ1345', power: 1 },
+      { rowId: 46, nmoBaseName: 'Дв2345', headDeviceName: 'ЯУ1345', power: 1 },
+      { rowId: 47, nmoBaseName: 'ШУ15678', headDeviceName: 'ЩР1', power: 2 },
+      { rowId: 48, nmoBaseName: 'ЯУ15678', headDeviceName: 'ШУ15678', power: 2 },
+      { rowId: 49, nmoBaseName: 'Дв15678', headDeviceName: 'ЯУ15678', power: 1 },
+      { rowId: 50, nmoBaseName: 'Дв25678', headDeviceName: 'ЯУ15678', power: 1 },
+      { rowId: 51, nmoBaseName: 'EL7', headDeviceName: 'ШУ33', power: 0.03 },
+      { rowId: 52, nmoBaseName: 'EL5', headDeviceName: 'ШУ33', power: 0.03 }
+    ];
+
+    function analyzeProblem() {
+      const resultsDiv = document.getElementById('analysis-results');
+      resultsDiv.innerHTML = '<div class="result">Анализ данных...</div>';
+      
+      const deviceMap = PowerCalculator.createDeviceMap(realData);
+      const childrenMap = PowerCalculator.createChildrenMap(realData);
+      
+      let analysis = '<div class="test-section"><h3>Проблемные устройства</h3>';
+      
+      // Проверяем ШУ1
+      const shU1Device = realData.find(d => d.nmoBaseName === 'ШУ1');
+      const shU1Children = childrenMap.get('ШУ1') || [];
+      
+      analysis += `<h4>ШУ1 - текущая мощность: ${shU1Device.power}</h4>`;
+      analysis += `<table><tr><th>Дочернее устройство</th><th>Мощность</th></tr>`;
+      
+      let expectedShU1Power = 0;
+      shU1Children.forEach(child => {
+        const childPower = parseFloat(child.power) || 0;
+        expectedShU1Power += childPower;
+        analysis += `<tr><td>${child.nmoBaseName}</td><td>${childPower}</td></tr>`;
+      });
+      
+      analysis += `</table>`;
+      analysis += `<p><strong>Ожидаемая мощность ШУ1: ${expectedShU1Power.toFixed(3)}</strong></p>`;
+      analysis += `<p class="problem">Проблема: ШУ1 имеет собственную мощность 6.240000000000002, 
+      но также рассчитывает мощность дочерних устройств!</p>`;
+      
+      // Проверяем другие проблемные устройства
+      const shU33 = realData.find(d => d.nmoBaseName === 'ШУ33');
+      analysis += `<h4>ШУ33 - текущая мощность: ${shU33.power}</h4>`;
+      analysis += `<p class="problem">Проблема: ШУ33 имеет собственную мощность 2.0599999999999996, 
+      но также должен рассчитывать мощность дочерних устройств!</p>`;
+      
+      analysis += '</div>';
+      resultsDiv.innerHTML = analysis;
+    }
+
+    function analyzeShU1() {
+      const resultsDiv = document.getElementById('shu1-results');
+      resultsDiv.innerHTML = '<div class="result">Анализ ШУ1...</div>';
+      
+      const deviceMap = PowerCalculator.createDeviceMap(realData);
+      const childrenMap = PowerCalculator.createChildrenMap(realData);
+      
+      let analysis = '<div class="test-section"><h3>Детальный анализ ШУ1</h3>';
+      
+      // Рекурсивный расчёт с выводом промежуточных результатов
+      function calculateDetailedPower(deviceName, visited = new Set(), level = 0) {
+        if (visited.has(deviceName)) {
+          return { power: 0, details: [`Цикл для ${deviceName}`] };
+        }
+        
+        visited.add(deviceName);
+        const indent = '  '.repeat(level);
+        let totalPower = 0;
+        const details = [];
+        
+        const device = deviceMap.get(deviceName);
+        const ownPower = device ? parseFloat(device.power) || 0 : 0;
+        
+        if (ownPower > 0) {
+          details.push(`${indent}${deviceName} (собственная мощность: ${ownPower})`);
+          totalPower += ownPower;
+        }
+        
+        const children = childrenMap.get(deviceName) || [];
+        children.forEach(child => {
+          const childResult = calculateDetailedPower(child.nmoBaseName, visited, level + 1);
+          totalPower += childResult.power;
+          details.push(...childResult.details);
+        });
+        
+        visited.delete(deviceName);
+        return { power: totalPower, details };
+      }
+      
+      const shU1Result = calculateDetailedPower('ШУ1');
+      
+      analysis += `<h4>Расчёт мощности ШУ1:</h4>`;
+      analysis += `<pre>${shU1Result.details.join('\n')}</pre>`;
+      analysis += `<p><strong>Итого: ${shU1Result.power.toFixed(3)}</strong></p>`;
+      
+      // Показываем какая мощность должна быть
+      const shU1Device = realData.find(d => d.nmoBaseName === 'ШУ1');
+      const children = childrenMap.get('ШУ1') || [];
+      let childrenPower = 0;
+      children.forEach(child => {
+        childrenPower += parseFloat(child.power) || 0;
+      });
+      
+      analysis += `<h4>Проблема:</h4>`;
+      analysis += `<p>Собственная мощность ШУ1: ${shU1Device.power}</p>`;
+      analysis += `<p>Сумма дочерних мощностей: ${childrenPower.toFixed(3)}</p>`;
+      analysis += `<p>Текущий алгоритм суммирует оба значения: ${(parseFloat(shU1Device.power) + childrenPower).toFixed(3)}</p>`;
+      analysis += `<p>Ожидаемая мощность (только дочерние): ${childrenPower.toFixed(3)}</p>`;
+      
+      analysis += '</div>';
+      resultsDiv.innerHTML = analysis;
+    }
+  </script>
+</body>
+</html>

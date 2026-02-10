@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug ШУ1 Power Calculation</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; }
+    .result { margin: 10px 0; padding: 8px; border-radius: 4px; }
+    .success { color: #28a745; font-weight: bold; }
+    .error { color: #dc3545; font-weight: bold; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Debug ШУ1 Calculation</h1>
+    <button onclick="debugShU1()">Debug ШУ1</button>
+    <div id="results"></div>
+  </div>
+
+  <script src="../widget/managerCalc/js/powerCalculator.js"></script>
+
+  <script>
+    // Только устройства, относящиеся к ШУ1
+    const shU1Data = [
+      // Прямые дети ШУ1
+      { rowId: 19, nmoBaseName: 'ЯУ1', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 26, nmoBaseName: 'ЯУ3', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 35, nmoBaseName: 'ЯУ77', headDeviceName: 'ШУ1', power: 2 },
+      
+      // EL устройства (прямые дети ШУ1)
+      { rowId: 29, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 30, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 31, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 32, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 33, nmoBaseName: 'EL8', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 34, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 38, nmoBaseName: 'EL9', headDeviceName: 'ШУ1', power: 0.03 },
+      { rowId: 39, nmoBaseName: 'EL77', headDeviceName: 'ШУ1', power: 0.03 },
+      
+      // Внуки (дети ЯУ1)
+      { rowId: 20, nmoBaseName: 'Дв1', headDeviceName: 'ЯУ1', power: 1 },
+      { rowId: 21, nmoBaseName: 'Дв2', headDeviceName: 'ЯУ1', power: 1 },
+      
+      // Внуки (дети ЯУ3)
+      { rowId: 27, nmoBaseName: 'Дв5', headDeviceName: 'ЯУ3', power: 1 },
+      { rowId: 28, nmoBaseName: 'Дв6', headDeviceName: 'ЯУ3', power: 1 },
+      
+      // Внуки (дети ЯУ77)
+      { rowId: 36, nmoBaseName: 'Дв771', headDeviceName: 'ЯУ77', power: 1 },
+      { rowId: 37, nmoBaseName: 'Дв772', headDeviceName: 'ЯУ77', power: 1 },
+      
+      // Само устройство ШУ1
+      { rowId: 18, nmoBaseName: 'ШУ1', headDeviceName: 'ЩР1', power: 6.240000000000002 }
+    ];
+
+    function debugShU1() {
+      const resultsDiv = document.getElementById('results');
+      const deviceMap = PowerCalculator.createDeviceMap(shU1Data);
+      const childrenMap = PowerCalculator.createChildrenMap(shU1Data);
+      
+      let output = '<h2>Детальный расчёт ШУ1</h2>';
+      
+      // Показываем всех прямых детей ШУ1
+      const shU1Children = childrenMap.get('ШУ1') || [];
+      output += '<h3>Прямые дети ШУ1:</h3>';
+      
+      let directTotal = 0;
+      shU1Children.forEach(child => {
+        const childPower = parseFloat(child.power) || 0;
+        directTotal += childPower;
+        output += `<p>${child.nmoBaseName}: ${childPower}</p>`;
+      });
+      output += `<p><strong>Сумма прямых детей: ${directTotal.toFixed(3)}</strong></p>`;
+      
+      // Теперь рекурсивно рассчитаем
+      const calculatedPower = PowerCalculator.calculateDevicePower('ШУ1', childrenMap, deviceMap, new Set());
+      output += `<h3>Рекурсивный расчёт: ${calculatedPower.toFixed(3)}</h3>`;
+      
+      // Ручной расчёт
+      output += '<h3>Ручной расчёт:</h3>';
+      let manualTotal = 0;
+      
+      // Прямые дети
+      manualTotal += 2; // ЯУ1
+      manualTotal += 2; // ЯУ3
+      manualTotal += 2; // ЯУ77
+      manualTotal += 0.03 * 9; // 9 EL устройств
+      
+      // Внуки (дети ЯУ1)
+      manualTotal += 1; // Дв1
+      manualTotal += 1; // Дв2
+      
+      // Внуки (дети ЯУ3)
+      manualTotal += 1; // Дв5
+      manualTotal += 1; // Дв6
+      
+      // Внуки (дети ЯУ77)
+      manualTotal += 1; // Дв771
+      manualTotal += 1; // Дв772
+      
+      output += `<p>Ручной расчёт: ${manualTotal.toFixed(3)}</p>`;
+      
+      // Показываем проблему
+      output += '<h3>Проблема:</h3>';
+      output += `<p>Текущая мощность ШУ1: 6.240000000000002</p>`;
+      output += `<p>Расчётная мощность детей: ${calculatedPower.toFixed(3)}</p>`;
+      output += `<p>Ожидается пользователем: 6.18</p>`;
+      output += `<p>Разница: ${(6.18 - 6.240000000000002).toFixed(3)}</p>`;
+      
+      // Проверяем, может нужно только СУММИРОВАТЬ прямых детей
+      output += '<h3>Только прямые дети:</h3>';
+      let onlyDirect = 0;
+      shU1Children.forEach(child => {
+        onlyDirect += parseFloat(child.power) || 0;
+      });
+      output += `<p>Только прямые дети: ${onlyDirect.toFixed(3)}</p>`;
+      
+      resultsDiv.innerHTML = output;
+    }
+  </script>
+</body>
+</html>

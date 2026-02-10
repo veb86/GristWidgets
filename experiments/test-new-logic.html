@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Power Calculator Logic</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; }
+    .success { color: #28a745; font-weight: bold; }
+    .error { color: #dc3545; font-weight: bold; }
+    .warning { color: #856404; font-weight: bold; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Test New Power Calculator Logic</h1>
+    <button onclick="testNewLogic()">Test New Logic</button>
+    <div id="results"></div>
+  </div>
+
+  <script src="../widget/managerCalc/js/powerCalculator.js"></script>
+
+  <script>
+    // Test data based on issue requirements
+    const testData = [
+      // Simple case - parent with no power should be calculated
+      { rowId: 1, nmoBaseName: 'ЩР', headDeviceName: 'ВРУ1', power: 0 },
+      { rowId: 2, nmoBaseName: 'EL5', headDeviceName: 'ЩР', power: 0.03 },
+      { rowId: 3, nmoBaseName: 'EL7', headDeviceName: 'ЩР', power: 0.03 },
+      { rowId: 4, nmoBaseName: 'EL6', headDeviceName: 'ЩР', power: 0.03 },
+      
+      // Case with existing power - should NOT be recalculated
+      { rowId: 5, nmoBaseName: 'ШУ1', headDeviceName: 'ЩР1', power: 6.18 },
+      { rowId: 6, nmoBaseName: 'ЯУ1', headDeviceName: 'ШУ1', power: 2 },
+      { rowId: 7, nmoBaseName: 'Дв1', headDeviceName: 'ЯУ1', power: 1 },
+      
+      // Another device with no power - should be calculated
+      { rowId: 8, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ1', power: 0 },
+      
+      // Device with rounding issue - should be rounded
+      { rowId: 9, nmoBaseName: 'ШУ33', headDeviceName: 'ЩР1', power: 0 },
+      { rowId: 10, nmoBaseName: 'Дв3331', headDeviceName: 'ШУ33', power: 1 },
+      { rowId: 11, nmoBaseName: 'Дв3332', headDeviceName: 'ШУ33', power: 1 },
+      { rowId: 12, nmoBaseName: 'EL7', headDeviceName: 'ШУ33', power: 0.03 },
+      { rowId: 13, nmoBaseName: 'EL5', headDeviceName: 'ШУ33', power: 0.03 }
+    ];
+
+    function testNewLogic() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<div>Testing new logic...</div>';
+      
+      const deviceMap = PowerCalculator.createDeviceMap(testData);
+      const childrenMap = PowerCalculator.createChildrenMap(testData);
+      
+      let output = '<h2>Test Results</h2>';
+      
+      // Test the updated algorithm
+      const updates = PowerCalculator.calculateAllPowers(testData);
+      
+      output += `<h3>Updates Generated: ${updates.length}</h3>`;
+      output += '<table><tr><th>RowId</th><th>Device</th><th>Old Power</th><th>New Power</th><th>Expected</th></tr>';
+      
+      // Map updates by rowId for easy lookup
+      const updateMap = new Map();
+      updates.forEach(update => {
+        updateMap.set(update.rowId, update.power);
+      });
+      
+      testData.forEach(device => {
+        const newPower = updateMap.get(device.rowId);
+        const oldPower = parseFloat(device.power) || 0;
+        
+        let expected = '';
+        let status = '';
+        
+        if (device.nmoBaseName === 'ЩР') {
+          expected = '0.09'; // 0.03 + 0.03 + 0.03
+          if (newPower && Math.abs(newPower - 0.09) < 0.001) {
+            status = '✅';
+          } else if (newPower) {
+            status = '❌';
+          } else {
+            status = '❌ No update';
+          }
+        } else if (device.nmoBaseName === 'ШУ1') {
+          expected = '6.18'; // Should NOT be updated (has existing power)
+          if (!newPower) {
+            status = '✅';
+          } else {
+            status = '❌';
+          }
+        } else if (device.nmoBaseName === 'ЩР1') {
+          // This depends on ШУ1 children, but ШУ1 won't be recalculated
+          // Let's see what algorithm gives us
+          expected = '6.18'; // Should include ШУ1's power + its children
+          if (newPower && Math.abs(newPower - 6.18) < 0.001) {
+            status = '✅';
+          } else if (newPower) {
+            status = '❌';
+          } else {
+            status = '❌ No update';
+          }
+        } else if (device.nmoBaseName === 'ШУ33') {
+          expected = '2.06'; // 1 + 1 + 0.03 + 0.03, rounded
+          if (newPower && Math.abs(newPower - 2.06) < 0.001) {
+            status = '✅';
+          } else if (newPower) {
+            status = '❌';
+          } else {
+            status = '❌ No update';
+          }
+        } else {
+          expected = 'N/A';
+          status = '—';
+        }
+        
+        output += `<tr>
+          <td>${device.rowId}</td>
+          <td>${device.nmoBaseName}</td>
+          <td>${oldPower}</td>
+          <td>${newPower ? newPower.toFixed(3) : 'No update'}</td>
+          <td>${expected}</td>
+          <td>${status}</td>
+        </tr>`;
+      });
+      
+      output += '</table>';
+      
+      // Test rounding specifically
+      output += '<h3>Rounding Test</h3>';
+      const roundingTest = PowerCalculator.calculateDevicePower('ШУ33', childrenMap, deviceMap, new Set());
+      output += `<p>ШУ33 calculation result: ${roundingTest} (should be rounded to 3 decimals)</p>`;
+      
+      resultsDiv.innerHTML = output;
+    }
+  </script>
+</body>
+</html>
