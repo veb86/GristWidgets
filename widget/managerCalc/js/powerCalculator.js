@@ -14,7 +14,11 @@ const PowerCalculator = {
 
     devices.forEach(device => {
       if (device.nmoBaseName) {
-        deviceMap.set(device.nmoBaseName, device);
+        // Сохраняем только первое устройство с таким именем
+        // Остальные дубликаты игнорируем для предотвращения конфликтов
+        if (!deviceMap.has(device.nmoBaseName)) {
+          deviceMap.set(device.nmoBaseName, device);
+        }
       }
     });
 
@@ -43,46 +47,29 @@ const PowerCalculator = {
   },
 
   /**
-   * Рассчитывает суммарную мощность для одного устройства рекурсивно
+   * Рассчитывает суммарную мощность для одного устройства (только прямые дочерние)
    * @param {string} deviceName - Название устройства
    * @param {Map<string, Array<Object>>} childrenMap - Словарь дочерних устройств
    * @param {Map<string, Object>} deviceMap - Словарь всех устройств
-   * @param {Set<string>} visited - Множество посещённых устройств для защиты от циклов
    * @returns {number} Суммарная мощность устройства
    */
-  calculateDevicePower(deviceName, childrenMap, deviceMap, visited) {
-    // Защита от циклических зависимостей
-    if (visited.has(deviceName)) {
-      console.warn(`Обнаружен цикл для устройства: ${deviceName}`);
-      return 0;
-    }
-
-    visited.add(deviceName);
-
-    // Получаем дочерние устройства
+  calculateDevicePower(deviceName, childrenMap, deviceMap) {
+    // Получаем прямые дочерние устройства
     const children = childrenMap.get(deviceName) || [];
     let totalPower = 0;
 
-    // Рекурсивно суммируем мощности всех дочерних устройств
+    // Суммируем мощности только прямых дочерних устройств
     children.forEach(child => {
-      const childPower = this.calculateDevicePower(
-        child.nmoBaseName,
-        childrenMap,
-        deviceMap,
-        visited
-      );
-      
-      // Добавляем собственную мощность дочернего устройства
       const ownPower = parseFloat(child.power) || 0;
-      totalPower += childPower + ownPower;
+      totalPower += ownPower;
     });
-
-    visited.delete(deviceName);
-    return totalPower;
+    
+    // Округляем результат до 3 знаков после запятой
+    return Math.round(totalPower * 1000) / 1000;
   },
 
   /**
-   * Рассчитывает мощности для всех устройств
+   * Рассчитывает мощности для всех устройств (только прямые дочерние)
    * @param {Array<Object>} devices - Массив всех устройств
    * @param {Function} progressCallback - Функция обратного вызова для прогресса
    * @returns {Array<Object>} Массив обновлений для устройств
@@ -96,24 +83,24 @@ const PowerCalculator = {
 
     // Проходим по всем устройствам
     devices.forEach((device, index) => {
-      // Рассчитываем мощность для устройства
-      const visited = new Set();
-      const calculatedPower = this.calculateDevicePower(
-        device.nmoBaseName,
-        childrenMap,
-        deviceMap,
-        visited
-      );
-
       const currentPower = parseFloat(device.power) || 0;
-      
-      // Обновляем только если есть дочерние устройства или мощность изменилась
       const hasChildren = childrenMap.has(device.nmoBaseName);
-      if (hasChildren && calculatedPower !== currentPower) {
-        updates.push({
-          rowId: device.rowId,
-          power: calculatedPower
-        });
+      
+      if (hasChildren) {
+        // Рассчитываем мощность для устройств с дочерними устройствами
+        const calculatedPower = this.calculateDevicePower(
+          device.nmoBaseName,
+          childrenMap,
+          deviceMap
+        );
+
+        // Обновляем только если мощность изменилась
+        if (Math.abs(calculatedPower - currentPower) > 0.001) {
+          updates.push({
+            rowId: device.rowId,
+            power: calculatedPower
+          });
+        }
       }
 
       // Вызываем callback для обновления прогресса
