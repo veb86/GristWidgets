@@ -142,7 +142,8 @@ const DataModule = {
         nmoBaseName: tableData[columnMapping.nmoBaseName]?.[i] || '',
         level1: tableData[columnMapping.level1]?.[i] || '',
         level2: tableData[columnMapping.level2]?.[i] || '',
-        level3: tableData[columnMapping.level3]?.[i] || ''
+        level3: tableData[columnMapping.level3]?.[i] || '',
+        power: tableData[columnMapping.power]?.[i] || 0
       };
 
       if (i < 5) { // Логируем только первые 5 устройств для отладки
@@ -196,6 +197,10 @@ const DataModule = {
     // Поиск колонки с базовым именем НМО
     const nmoBaseNameVariants = ['NMO_BaseName', 'nmoBaseName', 'nmo_base_name', 'NMOBaseName', 'nmobase', 'NMO_BaseName'];
     mapping.nmoBaseName = this.findBestMatch(columnNames, nmoBaseNameVariants);
+
+    // Поиск колонки с мощностью
+    const powerVariants = ['Power', 'power', 'POWER', 'Мощность', 'мощность', 'Power_', 'Power_'];
+    mapping.power = this.findBestMatch(columnNames, powerVariants);
 
     // Поиск колонок уровней
     const level1Variants = ['1level', 'level1', 'Level1', 'level_1', 'Level_1', 'first_level', 'level_1_', 'Level1_'];
@@ -401,6 +406,47 @@ const DataModule = {
       }
     } catch (error) {
       console.error('Ошибка при пакетном обновлении групп:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Обновляет мощности для нескольких устройств пакетом
+   * @param {Array<Object>} updates - Массив обновлений
+   * @returns {Promise<void>}
+   */
+  async updateDevicePowerBatch(updates) {
+    // Получаем текущие данные таблицы, чтобы определить правильные имена колонок
+    const tableData = await grist.docApi.fetchTable(CONFIG.TABLE_NAME);
+    const columnMapping = this.autoDetectColumnNames(tableData);
+
+    try {
+      const actions = updates.map(update => {
+        // Создаем объект обновления только для существующей колонки мощности
+        const updateFields = {};
+
+        if (columnMapping.power) {
+          updateFields[columnMapping.power] = update.power;
+        } else {
+          console.warn(`Колонка power не найдена в таблице ${CONFIG.TABLE_NAME}`);
+          return null;
+        }
+
+        return [
+          'UpdateRecord',
+          CONFIG.TABLE_NAME,
+          update.rowId,
+          updateFields
+        ];
+      }).filter(action => action !== null); // Фильтруем null действия
+
+      if (actions.length > 0) {
+        await grist.docApi.applyUserActions(actions);
+      } else {
+        console.warn('Нет действий для обновления мощностей');
+      }
+    } catch (error) {
+      console.error('Ошибка при пакетном обновлении мощностей:', error);
       throw error;
     }
   },

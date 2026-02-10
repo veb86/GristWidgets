@@ -24,6 +24,7 @@ const App = {
       // Устанавливаем обработчики кнопок
       UIModule.setButtonHandler(() => this.handleCalculatePaths());
       UIModule.setGroupsButtonHandler(() => this.handleCalculateGroups());
+      UIModule.setPowerButtonHandler(() => this.handleCalculatePower());
 
       console.log('Виджет managerCalc успешно инициализирован');
     } catch (error) {
@@ -263,6 +264,128 @@ const App = {
       const batch = updates.slice(start, end);
 
       await DataModule.updateDeviceGroupsBatch(batch);
+
+      // Небольшая задержка между пакетами
+      if (i < totalBatches - 1) {
+        await this.delay(CONFIG.UPDATE_DELAY);
+      }
+    }
+  },
+
+  /**
+   * Обработчик нажатия кнопки "Рассчитать мощности"
+   */
+  async handleCalculatePower() {
+    try {
+      console.log('handleCalculatePower: начало обработки');
+
+      // Блокируем все кнопки во время расчёта
+      UIModule.disableAllButtons();
+      UIModule.hideStatus();
+      UIModule.showProgress();
+
+      // Загружаем данные из таблицы
+      UIModule.updateProgress(0, 0, 0);
+      console.log('handleCalculatePower: загрузка данных из таблицы...');
+      const rawData = await DataModule.loadAllDevices();
+      console.log('handleCalculatePower: данные загружены, количество записей:', rawData?.id?.length || 0);
+
+      // Преобразуем данные в удобный формат
+      console.log('handleCalculatePower: преобразование данных...');
+      const devices = DataModule.transformTableData(rawData);
+      console.log('handleCalculatePower: преобразование завершено, количество устройств:', devices.length);
+
+      if (devices.length === 0) {
+        console.log('handleCalculatePower: таблица пуста');
+        UIModule.showStatus('Таблица пуста', 'info');
+        UIModule.hideProgress();
+        UIModule.enableAllButtons();
+        return;
+      }
+
+      // Валидация данных
+      console.log('handleCalculatePower: валидация данных...');
+      const validation = PowerCalculator.validateData(devices);
+
+      if (!validation.isValid) {
+        const errorMessage = 'Обнаружены ошибки в данных:\n' +
+          validation.errors.join('\n');
+        UIModule.showStatus(errorMessage, 'error');
+        UIModule.hideProgress();
+        UIModule.enableAllButtons();
+        console.error('Ошибки валидации:', validation.errors);
+        return;
+      }
+
+      console.log('handleCalculatePower: валидация прошла успешно');
+
+      // Получаем статистику иерархии
+      const stats = PowerCalculator.getHierarchyStats(devices);
+      console.log('handleCalculatePower: статистика иерархии:', stats);
+
+      // Рассчитываем мощности для всех устройств
+      console.log('handleCalculatePower: начало расчета мощностей...');
+      const updates = PowerCalculator.calculateAllPowers(
+        devices,
+        (percent, current, total) => {
+          console.log(`handleCalculatePower: прогресс расчета - ${percent}% (${current}/${total})`);
+          UIModule.updateProgress(percent, current, total);
+        }
+      );
+      console.log('handleCalculatePower: расчет завершен, найдено обновлений:', updates.length);
+
+      // Если нет изменений
+      if (updates.length === 0) {
+        console.log('handleCalculatePower: нет изменений для обновления');
+        UIModule.showStatus(
+          'Все мощности уже актуальны, обновление не требуется',
+          'info'
+        );
+        UIModule.hideProgress();
+        UIModule.enableAllButtons();
+        return;
+      }
+
+      // Обновляем данные в таблице пакетами
+      console.log('handleCalculatePower: применение обновлений...');
+      await this.applyPowerUpdatesInBatches(updates);
+      console.log('handleCalculatePower: обновления применены');
+
+      // Показываем сообщение об успехе
+      UIModule.showStatus(
+        `Успешно обновлено мощностей: ${updates.length} из ${devices.length}`,
+        'success'
+      );
+
+      console.log(`Расчёт мощностей завершён. Обновлено записей: ${updates.length}`);
+    } catch (error) {
+      console.error('Ошибка при расчёте мощностей:', error);
+      UIModule.showStatus(
+        `Ошибка: ${error.message}`,
+        'error'
+      );
+    } finally {
+      // Разблокируем кнопки и скрываем прогресс
+      UIModule.hideProgress();
+      UIModule.enableAllButtons();
+      console.log('handleCalculatePower: завершение обработки');
+    }
+  },
+
+  /**
+   * Применяет обновления мощностей к таблице пакетами
+   * @param {Array<Object>} updates - Массив обновлений
+   * @returns {Promise<void>}
+   */
+  async applyPowerUpdatesInBatches(updates) {
+    const totalBatches = Math.ceil(updates.length / CONFIG.BATCH_SIZE);
+
+    for (let i = 0; i < totalBatches; i++) {
+      const start = i * CONFIG.BATCH_SIZE;
+      const end = Math.min(start + CONFIG.BATCH_SIZE, updates.length);
+      const batch = updates.slice(start, end);
+
+      await DataModule.updateDevicePowerBatch(batch);
 
       // Небольшая задержка между пакетами
       if (i < totalBatches - 1) {
