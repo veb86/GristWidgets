@@ -1,128 +1,63 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Виджет-органайзер electricalCalc</title>
-    <!-- Подключение стилей для виджета-органайзера -->
-    <link rel="stylesheet" href="./css/style.css">
-    
-    <!-- Загрузка внешних библиотек -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
-    <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Виджет расчёта электрических устройств</title>
+
+  <!-- Tabulator CSS -->
+  <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+
+  <!-- Bootstrap CSS для базовых стилей -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+
+  <!-- Пользовательские стили -->
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-    <!-- Основной контейнер с flexbox-версткой для разделения экрана -->
-    <!-- Делит интерфейс на левую панель (20%) и правую панель (80%) -->
-    <div class="main-container">
-        <!-- Левая панель (20%) - навигационное дерево устройств -->
-        <div id="left-panel">
-            <element-tree id="nav-tree"></element-tree>
-        </div>
+  <!-- Контейнер для статусных сообщений -->
+  <div id="status-message" class="status-message" style="display: none;"></div>
 
-        <!-- Правая панель (80%) - рабочая область с вкладками -->
-        <div id="right-panel">
-            <!-- Система вкладок для переключения между виджетами -->
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="tab-edittable">Таблица</button>
-                <button class="tab-btn" data-tab="tab-onelineschema">Однолинейная схема</button>
-            </div>
+  <!-- Главный контейнер виджета -->
+  <div id="widget-container">
+    <!-- Контейнер для таблицы -->
+    <div id="table-container"></div>
 
-            <!-- Контент вкладок - здесь размещаются Web Components -->
-            <div class="tab-content">
-                <!-- Панель с виджетом редактирования таблиц -->
-                <div class="tab-pane active" id="tab-edittable">
-                    <element-edit-table id="edit-table"></element-edit-table>
-                </div>
-
-                <!-- Панель с виджетом визуализации однолинейных схем -->
-                <div class="tab-pane" id="tab-onelineschema">
-                    <element-one-line-schema id="one-line-schema"></element-one-line-schema>
-                </div>
-            </div>
-        </div>
+    <!-- Боковая панель редактирования (скрыта по умолчанию) -->
+    <div id="edit-panel" class="edit-panel">
+      <div class="edit-panel-header">
+        <h5>Редактирование записи</h5>
+        <button id="close-edit-panel" class="btn-close">&times;</button>
+      </div>
+      <div id="edit-panel-content" class="edit-panel-content">
+        <!-- Содержимое панели будет генерироваться динамически -->
+      </div>
+      <div class="edit-panel-footer">
+        <button id="save-edit" class="btn btn-primary">Сохранить</button>
+        <button id="cancel-edit" class="btn btn-secondary">Отмена</button>
+      </div>
     </div>
 
-    <!-- Глобальный объект для API взаимодействия между компонентами -->
-    <script>
-        // Глобальный объект для API взаимодействия между компонентами
-        window.AppHost = {
-            subscribers: [],
-            
-            // Метод получения данных
-            getData() {
-                // Возвращаем данные из Grist API
-                if (window.grist) {
-                    return window.grist.getTable();
-                }
-                return null;
-            },
-            
-            // Метод подписки на изменения данных
-            subscribe(callback) {
-                this.subscribers.push(callback);
-                
-                // Возвращаем функцию отписки
-                return () => {
-                    const index = this.subscribers.indexOf(callback);
-                    if (index > -1) {
-                        this.subscribers.splice(index, 1);
-                    }
-                };
-            },
-            
-            // Метод отправки событий
-            sendEvent(name, data) {
-                // Отправляем событие через CustomEvent
-                const event = new CustomEvent(name, { detail: data });
-                document.dispatchEvent(event);
-            },
-            
-            // Метод вызова подписчиков при изменении данных
-            notifySubscribers(data) {
-                this.subscribers.forEach(callback => {
-                    try {
-                        callback(data);
-                    } catch (error) {
-                        console.error('Error in subscriber callback:', error);
-                    }
-                });
-            },
-            
-            // Метод для установки выбранных строк
-            setSelectedRows(rowIds) {
-                if (window.grist) {
-                    window.grist.setSelectedRows(rowIds);
-                }
-            },
-            
-            // Метод для установки позиции курсора
-            setCursorPos(pos) {
-                if (window.grist) {
-                    window.grist.setCursorPos(pos);
-                }
-            }
-        };
-        
-        // Обработка сообщений от Grist API
-        if (window.grist) {
-            window.grist.ready();
-            window.grist.onRecords(function(records) {
-                window.AppHost.notifySubscribers({ type: 'records', data: records });
-            });
-        }
-    </script>
+    <!-- Информационная панель снизу -->
+    <div id="info-panel" class="info-panel">
+      <h6>Информация</h6>
+      <div id="info-panel-content" class="info-panel-content">
+        <!-- Содержимое будет заполнено динамически -->
+      </div>
+    </div>
+  </div>
 
-    <!-- Определение Web Components -->
-    <script src="./js/element-tree.js"></script>
-    <script src="./js/element-edit-table.js"></script>
-    <script src="./js/element-one-line-schema.js"></script>
-    
-    <!-- Модуль управления вкладками - обеспечивает переключение между вкладками -->
-    <script src="./js/tabs.js"></script>
+  <!-- Tabulator JS -->
+  <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+  <!-- Grist API -->
+  <script src="./grist-plugin-api.js"></script>
+
+  <!-- Модули приложения -->
+  <script src="./js/config.js"></script>
+  <script src="./js/data.js"></script>
+  <script src="./js/table.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>

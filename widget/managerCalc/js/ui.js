@@ -8,6 +8,7 @@ const UIModule = {
   elements: {
     calcButton: null,
     calcGroupsButton: null,
+    calcPowerButton: null,
     statusMessage: null,
     progressInfo: null,
     progressFill: null,
@@ -20,6 +21,7 @@ const UIModule = {
   init() {
     this.elements.calcButton = document.getElementById('calc-paths-btn');
     this.elements.calcGroupsButton = document.getElementById('calc-groups-btn');
+    this.elements.calcPowerButton = document.getElementById('calc-power-btn');
     this.elements.statusMessage = document.getElementById('status-message');
     this.elements.progressInfo = document.getElementById('progress-info');
     this.elements.progressFill = document.getElementById('progress-fill');
@@ -102,19 +104,35 @@ const UIModule = {
   },
 
   /**
-   * Блокирует обе кнопки
+   * Блокирует кнопку расчёта мощностей
+   */
+  disablePowerButton() {
+    this.elements.calcPowerButton.disabled = true;
+  },
+
+  /**
+   * Разблокирует кнопку расчёта мощностей
+   */
+  enablePowerButton() {
+    this.elements.calcPowerButton.disabled = false;
+  },
+
+  /**
+   * Блокирует все кнопки
    */
   disableAllButtons() {
     this.disableButton();
     this.disableGroupsButton();
+    this.disablePowerButton();
   },
 
   /**
-   * Разблокирует обе кнопки
+   * Разблокирует все кнопки
    */
   enableAllButtons() {
     this.enableButton();
     this.enableGroupsButton();
+    this.enablePowerButton();
   },
 
   /**
@@ -131,5 +149,13 @@ const UIModule = {
    */
   setGroupsButtonHandler(handler) {
     this.elements.calcGroupsButton.addEventListener('click', handler);
+  },
+
+  /**
+   * Устанавливает обработчик клика на кнопку расчёта мощностей
+   * @param {Function} handler - Функция-обработчик
+   */
+  setPowerButtonHandler(handler) {
+    this.elements.calcPowerButton.addEventListener('click', handler);
   }
 };

@@ -182,7 +182,7 @@ var UIModule = (function() {
    * Обработчик выбора узла в дереве
    *
    * Вызывается при клике на узел дерева.
-   * Навигирует к записи в Grist и применяет фильтр.
+   * Навигирует к записи в Grist, записывает имя узла в таблицу SYSTEM и применяет фильтр.
    *
    * @param {Event} e - Событие
    * @param {Object} data - Данные узла от jsTree
@@ -207,11 +207,114 @@ var UIModule = (function() {
         });
       }
 
+      // Записываем имя узла в таблицу SYSTEM
+      writeToSystemTable(node);
+
       // Применяем фильтр к связанным виджетам
       applyFilterForNode(nodeId, childrenIds);
 
     } catch (error) {
       console.error('Ошибка обработки выбора узла:', error);
+    }
+  }
+
+  // Константы для имен столбцов в таблице SYSTEM
+  var FNAME_COLUMN = 'fname';
+  var FVALUE_COLUMN = 'fvalue';
+
+  /**
+   * Записать имя узла в таблицу SYSTEM
+   *
+   * @param {Object} node - Узел дерева
+   */
+  async function writeToSystemTable(node) {
+    try {
+      // Получаем имя узла для записи
+      var nodeName = node.text || node.id || 'Unknown';
+
+      // Проверяем, существует ли таблица SYSTEM
+      var systemTableExists = await checkTableExists('SYSTEM');
+
+      if (!systemTableExists) {
+        // Если таблица SYSTEM не существует, создаем её
+        try {
+          await grist.docApi.applyUserActions([
+            ['AddTable', 'SYSTEM', [
+              { id: FNAME_COLUMN, type: 'Text', title: 'Field Name' },
+              { id: FVALUE_COLUMN, type: 'Text', title: 'Field Value' }
+            ]]
+          ]);
+        } catch (createError) {
+          console.error('Ошибка создания таблицы SYSTEM:', createError);
+          throw createError;
+        }
+      }
+
+      // Проверяем, есть ли уже запись с нужным fname в таблице SYSTEM
+      var systemData;
+      var fnameRecordId = null;
+
+      try {
+        systemData = await grist.docApi.fetchTable('SYSTEM');
+
+        // Ищем существующую запись с нужным fname
+        if (systemData && systemData[FNAME_COLUMN] !== undefined) {
+          for (var i = 0; i < systemData[FNAME_COLUMN].length; i++) {
+            if (systemData[FNAME_COLUMN][i] === 'ShieldName') {
+              fnameRecordId = systemData.id[i];
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        // Если таблица SYSTEM не существует, создаем с нужными столбцами
+        systemData = null;
+      }
+
+      // Подготовим действия для обновления или создания записи
+      var actions = [];
+
+      if (fnameRecordId !== null) {
+        // Обновляем существующую запись
+        var updateRecord = {};
+        updateRecord[FNAME_COLUMN] = 'ShieldName';
+        updateRecord[FVALUE_COLUMN] = nodeName;
+        actions.push(['UpdateRecord', 'SYSTEM', fnameRecordId, updateRecord]);
+      } else {
+        // Создаем новую запись
+        var addRecord = {};
+        addRecord[FNAME_COLUMN] = 'ShieldName';
+        addRecord[FVALUE_COLUMN] = nodeName;
+        actions.push(['AddRecord', 'SYSTEM', null, addRecord]);
+      }
+
+      // Выполняем действия
+      await grist.docApi.applyUserActions(actions);
+
+      console.log('Запись в таблицу SYSTEM выполнена: ShieldName=' + nodeName);
+      updateStatus('Элемент "' + nodeName + '" записан в таблицу SYSTEM');
+
+    } catch (error) {
+      console.error('Ошибка при записи в таблицу SYSTEM:', error);
+      updateStatus('Ошибка записи в SYSTEM: ' + error.message);
+    }
+  }
+
+  /**
+   * Проверить, существует ли таблица
+   *
+   * @param {string} tableName - Имя таблицы
+   * @returns {Promise<boolean>} Существует ли таблица
+   */
+  async function checkTableExists(tableName) {
+    try {
+      // Получаем список всех таблиц
+      var tables = await grist.docApi.listTables();
+      // Проверяем, есть ли таблица в списке
+      return tables.includes(tableName);
+    } catch (error) {
+      console.error('Ошибка проверки существования таблицы:', error);
+      return false;
     }
   }
 

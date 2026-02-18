@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Real Issue Data with Direct Children</title>
+  <title>Power Calculator Fix Test</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; }
@@ -11,39 +11,38 @@
     .error { color: #dc3545; font-weight: bold; }
     .warning { color: #856404; font-weight: bold; }
     pre { background: #f8f9fa; padding: 10px; border-radius: 4px; }
-    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
-    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; }
-    .highlight { background-color: #fff3cd; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Test Real Issue Data with Direct Children Logic</h1>
-    <button onclick="testRealData()">Test Real Data</button>
+    <h1>Test Power Calculator Fix</h1>
+    <button onclick="testPowerCalculator()">Test Fixed Algorithm</button>
     <div id="results"></div>
   </div>
 
   <script src="../widget/managerCalc/js/powerCalculator.js"></script>
 
   <script>
-    // Real data from issue comment
-    const realData = [
-      { rowId: 1, nmoBaseName: 'ЩР', headDeviceName: 'ВРУ1', power: 0.12 },
+    // Test data from the issue
+    const testData = [
+      { rowId: 1, nmoBaseName: 'ЩР', headDeviceName: 'ВРУ1', power: 0 },
       { rowId: 2, nmoBaseName: 'EL5', headDeviceName: 'ЩР', power: 0.03 },
       { rowId: 3, nmoBaseName: 'EL7', headDeviceName: 'ЩР', power: 0.03 },
       { rowId: 4, nmoBaseName: 'EL5', headDeviceName: 'ЩР', power: 0.03 },
       { rowId: 5, nmoBaseName: 'EL6', headDeviceName: 'ЩР', power: 0.03 },
       { rowId: 6, nmoBaseName: 'Вкл', headDeviceName: 'ЩР', power: 0 },
-      { rowId: 7, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ1', power: 14.48 },
-      { rowId: 8, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ2', power: 14.48 },
+      { rowId: 7, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ1', power: 0 },  // Duplicate name!
+      { rowId: 8, nmoBaseName: 'ЩР1', headDeviceName: 'ВРУ2', power: 0 },  // Duplicate name!
       { rowId: 9, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
       { rowId: 10, nmoBaseName: 'EL3', headDeviceName: 'ЩР1', power: 0.03 },
       { rowId: 11, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
       { rowId: 12, nmoBaseName: 'EL2', headDeviceName: 'ЩР1', power: 0.03 },
       { rowId: 13, nmoBaseName: 'Вкл', headDeviceName: 'ЩР1', power: 0 },
-      { rowId: 14, nmoBaseName: 'ВРУ1', headDeviceName: '???', power: 14.48 },
-      { rowId: 15, nmoBaseName: 'ВРУ2', headDeviceName: '???', power: 14.48 },
+      { rowId: 14, nmoBaseName: 'ВРУ1', headDeviceName: '???', power: 0 },
+      { rowId: 15, nmoBaseName: 'ВРУ2', headDeviceName: '???', power: 0 },
       { rowId: 16, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
       { rowId: 17, nmoBaseName: 'EL1', headDeviceName: 'ЩР1', power: 0.03 },
       { rowId: 18, nmoBaseName: 'ШУ1', headDeviceName: 'ЩР1', power: 6.240000000000002 },
@@ -83,96 +82,68 @@
       { rowId: 52, nmoBaseName: 'EL5', headDeviceName: 'ШУ33', power: 0.03 }
     ];
 
-    function testRealData() {
+    function testPowerCalculator() {
       const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '<div>Testing real data...</div>';
+      resultsDiv.innerHTML = '<div>Testing...</div>';
       
-      const deviceMap = PowerCalculator.createDeviceMap(realData);
-      const childrenMap = PowerCalculator.createChildrenMap(realData);
+      const deviceMap = PowerCalculator.createDeviceMap(testData);
+      const childrenMap = PowerCalculator.createChildrenMap(testData);
       
-      let output = '<h2>Real Data Test Results</h2>';
+      let output = '<h2>Power Calculator Test Results</h2>';
       
-      // Focus on ШУ1 and ШУ33 specifically
-      output += '<h3>ШУ1 Analysis:</h3>';
-      const shU1Children = childrenMap.get('ШУ1') || [];
-      let shU1Sum = 0;
-      output += '<p>Direct children of ШУ1:</p>';
-      shU1Children.forEach(child => {
-        const power = parseFloat(child.power) || 0;
-        shU1Sum += power;
-        output += `<p>- ${child.nmoBaseName}: ${power}</p>`;
+      // Check for duplicate device names
+      const nameCounts = {};
+      testData.forEach(device => {
+        nameCounts[device.nmoBaseName] = (nameCounts[device.nmoBaseName] || 0) + 1;
       });
-      output += `<p><strong>Total direct children: ${shU1Sum.toFixed(3)}</strong></p>`;
       
-      const shU1Calc = PowerCalculator.calculateDevicePower('ШУ1', childrenMap, deviceMap);
-      output += `<p>Algorithm result: ${shU1Calc.toFixed(3)}</p>`;
-      output += `<p>User expects: 6.18</p>`;
+      const duplicates = Object.entries(nameCounts).filter(([name, count]) => count > 1);
+      if (duplicates.length > 0) {
+        output += '<div class="warning">⚠️ Duplicate device names found:</div>';
+        duplicates.forEach(([name, count]) => {
+          output += `<p>${name}: ${count} devices</p>`;
+        });
+      }
       
-      // Check difference between current power and direct children
-      const shU1Device = realData.find(d => d.nmoBaseName === 'ШУ1');
-      const currentShU1Power = parseFloat(shU1Device.power) || 0;
-      output += `<p>Current power: ${currentShU1Power.toFixed(3)}</p>`;
-      output += `<p>Difference: ${(6.18 - currentShU1Power).toFixed(3)}</p>`;
+      // Test ШУ1
+      const shU1Power = PowerCalculator.calculateDevicePower('ШУ1', childrenMap, deviceMap, new Set());
+      output += `<h3>ШУ1: ${shU1Power.toFixed(3)} (expected: ~6.18)</h3>`;
       
-      // ШУ33 Analysis
-      output += '<h3>ШУ33 Analysis:</h3>';
-      const shU33Children = childrenMap.get('ШУ33') || [];
-      let shU33Sum = 0;
-      output += '<p>Direct children of ШУ33:</p>';
-      shU33Children.forEach(child => {
-        const power = parseFloat(child.power) || 0;
-        shU33Sum += power;
-        output += `<p>- ${child.nmoBaseName}: ${power}</p>`;
-      });
-      output += `<p><strong>Total direct children: ${shU33Sum.toFixed(3)}</strong></p>`;
+      // Test ШУ33
+      const shU33Power = PowerCalculator.calculateDevicePower('ШУ33', childrenMap, deviceMap, new Set());
+      output += `<h3>ШУ33: ${shU33Power.toFixed(3)} (expected: ~2.06)</h3>`;
       
-      const shU33Calc = PowerCalculator.calculateDevicePower('ШУ33', childrenMap, deviceMap);
-      output += `<p>Algorithm result: ${shU33Calc.toFixed(3)}</p>`;
-      output += `<p>Should be: 2.06 (rounded)</p>`;
+      // Test ЩР1 - this might be problematic due to duplicates
+      const shR1Power = PowerCalculator.calculateDevicePower('ЩР1', childrenMap, deviceMap, new Set());
+      output += `<h3>ЩР1: ${shR1Power.toFixed(3)} (currently showing 14.48 in issue)</h3>`;
       
-      // Test full algorithm
-      output += '<h3>Full Algorithm Results:</h3>';
-      const updates = PowerCalculator.calculateAllPowers(realData);
-      output += `<p>Total updates generated: ${updates.length}</p>`;
+      // Show full calculation results
+      const updates = PowerCalculator.calculateAllPowers(testData);
+      output += `<h3>Full Updates (${updates.length} devices):</h3>`;
+      output += '<table><tr><th>RowId</th><th>Device</th><th>New Power</th></tr>';
       
-      // Map updates for easy lookup
-      const updateMap = new Map();
       updates.forEach(update => {
-        updateMap.set(update.rowId, update.power);
-      });
-      
-      output += '<table><tr><th>RowId</th><th>Device</th><th>Current</th><th>New</th><th>Status</th></tr>';
-      
-      // Check key devices
-      const keyDevices = ['ШУ1', 'ШУ33', 'ЩР1', 'ВРУ1', 'ВРУ2'];
-      
-      realData.forEach(device => {
-        if (keyDevices.includes(device.nmoBaseName)) {
-          const currentPower = parseFloat(device.power) || 0;
-          const newPower = updateMap.get(device.rowId);
-          let status = '';
-          
-          if (device.nmoBaseName === 'ШУ1') {
-            status = newPower ? `❌ Updated to ${newPower.toFixed(3)}` : '✅ No update (correct)';
-          } else if (device.nmoBaseName === 'ШУ33') {
-            status = newPower ? (Math.abs(newPower - 2.06) < 0.001 ? '✅ Correct' : `❌ Got ${newPower.toFixed(3)}`) : '❌ No update';
-          } else if (currentPower > 0) {
-            status = newPower ? '❌ Should not update' : '✅ No update (correct)';
-          } else {
-            status = newPower ? `✅ Updated to ${newPower.toFixed(3)}` : '❌ No update';
-          }
-          
+        const device = testData.find(d => d.rowId === update.rowId);
+        if (device) {
           output += `<tr>
-            <td>${device.rowId}</td>
+            <td>${update.rowId}</td>
             <td>${device.nmoBaseName}</td>
-            <td>${currentPower.toFixed(3)}</td>
-            <td>${newPower ? newPower.toFixed(3) : 'No update'}</td>
-            <td>${status}</td>
+            <td>${update.power.toFixed(3)}</td>
           </tr>`;
         }
       });
-      
       output += '</table>';
+      
+      // Manual calculation for verification
+      output += '<h3>Manual Calculation for ШУ33:</h3>';
+      const shU33Device = testData.find(d => d.nmoBaseName === 'ШУ33');
+      const shU33Children = childrenMap.get('ШУ33') || [];
+      let manualShU33 = 0;
+      shU33Children.forEach(child => {
+        manualShU33 += parseFloat(child.power) || 0;
+      });
+      output += `<p>ШУ33 children: ${manualShU33.toFixed(3)}</p>`;
+      output += `<p>Current power: ${shU33Device.power}</p>`;
       
       resultsDiv.innerHTML = output;
     }

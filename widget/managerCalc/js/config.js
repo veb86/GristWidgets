@@ -18,6 +18,7 @@ const CONFIG = {
     HEAD_DEVICE_NAME: 'HeadDeviceName',
     NG_HEAD_DEVICE: 'NGHeadDevice',
     NMO_BASE_NAME: 'NMO_BaseName',
+    POWER: 'Power',
     LEVEL_1: 'level1',
     LEVEL_2: 'level2',
     LEVEL_3: 'level3'
