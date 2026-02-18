@@ -1,0 +1,30 @@
+{
+  "name": "Multipage Widget",
+  "description": "Многостраничный виджет для Grist с поддержкой переключения между экранами (Главная, Детали, Настройки)",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "grist": {
+    "name": "Multipage",
+    "url": "index.html",
+    "widgetId": "multipage",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full",
+    "hasCustomOptions": true,
+    "fields": [
+      {
+        "name": "tableId",
+        "title": "Таблица",
+        "type": "string",
+        "description": "Выберите таблицу для работы с виджетом"
+      },
+      {
+        "name": "statusColumn",
+        "title": "Колонка статуса",
+        "type": "string",
+        "description": "Колонка для автоматического переключения страниц (например, Status)"
+      }
+    ]
+  }
+}

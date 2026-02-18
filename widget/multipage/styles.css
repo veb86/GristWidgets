@@ -1,0 +1,482 @@
+/**
+ * Стили для многостраничного виджета Grist
+ * 
+ * Включает:
+ * - Базовые стили для контейнеров
+ * - Анимации переключения страниц (fade / slide)
+ * - Стили для навигации
+ * - Адаптивные стили
+ */
+
+/* ========================================
+   БАЗОВЫЕ СТИЛИ
+   ======================================== */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+}
+
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+/* ========================================
+   НАВИГАЦИЯ
+   ======================================== */
+
+.navbar {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    color: #0d6efd !important;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.nav-link.active {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+/* ========================================
+   КОНТЕЙНЕР СТРАНИЦ
+   ======================================== */
+
+#pages-container {
+    position: relative;
+    min-height: 400px;
+}
+
+.page-content {
+    animation: fadeIn 0.4s ease-in-out;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* ========================================
+   СЕЛЕКТОР ТАБЛИЦ
+   ======================================== */
+
+.table-selector {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.table-selector label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.table-selector .form-select {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 10px 14px;
+    transition: all 0.3s ease;
+}
+
+.table-selector .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.table-selector .form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+/* ========================================
+   КОНТЕЙНЕР ТАБЛИЦЫ
+   ======================================== */
+
+#details-table-container,
+#table-container {
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tabulator {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+.tabulator .tabulator-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+.tabulator .tabulator-row {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tabulator .tabulator-row:hover {
+    background-color: #f8f9fa;
+}
+
+.tabulator .tabulator-cell {
+    padding: 10px 8px;
+    border-right: 1px solid #dee2e6;
+}
+
+/* Формульные колонки */
+.formula-column-header {
+    background-color: #e3f2fd !important;
+    color: #0d47a1 !important;
+    font-weight: bold;
+}
+
+.formula-column-cell {
+    background-color: #e3f2fd !important;
+    color: #0d47a1 !important;
+    font-style: italic;
+}
+
+/* Пагинация */
+.tabulator .tabulator-footer {
+    background-color: #f8f9fa;
+    border-top: 2px solid #dee2e6;
+}
+
+.tabulator .tabulator-paginator button {
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.tabulator .tabulator-paginator button:hover {
+    background-color: #667eea;
+    color: white;
+}
+
+/* ========================================
+   АНИМАЦИИ ПЕРЕКЛЮЧЕНИЯ СТРАНИЦ
+   ======================================== */
+
+/* Fade анимация */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Slide анимация */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Классы для анимаций при переключении */
+.page-enter {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.page-enter-from-right {
+    animation: slideInRight 0.4s ease-in-out;
+}
+
+.page-enter-from-left {
+    animation: slideInLeft 0.4s ease-in-out;
+}
+
+.page-exit {
+    animation: fadeOut 0.3s ease-in-out;
+}
+
+/* ========================================
+   КАРТОЧКИ
+   ======================================== */
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 12px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* ========================================
+   ИНДИКАТОРЫ И СТАТУСЫ
+   ======================================== */
+
+#record-indicator {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    transition: all 0.3s ease;
+}
+
+#record-indicator.active {
+    background-color: #198754 !important;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ========================================
+   ALERTS
+   ======================================== */
+
+.alert {
+    border-radius: 6px;
+    border: none;
+    font-size: 0.95rem;
+}
+
+.alert pre {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+}
+
+/* ========================================
+   КНОПКИ
+   ======================================== */
+
+.btn {
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #0f8a7f 0%, #2ed872 100%);
+}
+
+/* ========================================
+   ФОРМЫ
+   ======================================== */
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.form-select,
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 10px 14px;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 6px;
+}
+
+/* ========================================
+   СТАТУС СООБЩЕНИЯ
+   ======================================== */
+
+#status-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+#status-message .alert {
+    margin-bottom: 10px;
+    animation: slideInRight 0.3s ease-in-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ========================================
+   ПРЕЛОАДЕР
+   ======================================== */
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+}
+
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+/* ========================================
+   АДАПТИВНЫЕ СТИЛИ
+   ======================================== */
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 10px;
+    }
+
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .card-header h5 {
+        font-size: 1rem;
+    }
+
+    .page-content {
+        min-height: 300px;
+    }
+
+    #status-message {
+        left: 20px;
+        right: 20px;
+        min-width: auto;
+    }
+}
+
+/* ========================================
+   ТЁМНАЯ ТЕМА (опционально)
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a2e;
+        color: #eee;
+    }
+
+    .navbar {
+        background-color: #16213e !important;
+    }
+
+    .card {
+        background-color: #0f3460;
+        color: #eee;
+    }
+
+    .form-select,
+    .form-control {
+        background-color: #1a1a2e;
+        color: #eee;
+        border-color: #0f3460;
+    }
+
+    pre {
+        color: #eee;
+    }
+}
