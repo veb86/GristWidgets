@@ -1,255 +1,198 @@
 /**
  * Модуль страницы "Настройки"
  * 
- * Управление настройками виджета:
- * - Автоматическое переключение страниц
- * - Страница по умолчанию
- * - Дополнительные опции
+ * Управление настройками виджета.
  * 
- * @module SettingsModule
+ * Экспорт интерфейса:
+ * - init(context) - инициализация
+ * - destroy() - очистка ресурсов
+ * - onRecord(record) - обработка записи (опционально)
+ * - onRecords(records) - обработка списка записей (опционально)
  */
 
 var SettingsModule = (function() {
     'use strict';
 
-    // ========================================
-    // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
-    // ========================================
-
     /**
-     * Текущая запись из Grist
+     * Контекст экрана
      * @type {Object|null}
      */
-    var currentRecord = null;
+    var context = null;
 
     /**
-     * Список всех записей
-     * @type {Array}
-     */
-    var recordsList = [];
-
-    /**
-     * Текущие настройки виджета
+     * Локальные настройки
      * @type {Object}
      */
-    var widgetSettings = {
+    var localSettings = {
         autoSwitch: 'disabled',
         defaultPage: 'home'
     };
 
     /**
-     * Доступные опции для страницы по умолчанию
+     * Обработчики событий
      * @type {Array}
      */
-    var availablePages = [
-        { value: 'home', label: 'Главная' },
-        { value: 'details', label: 'Детали' },
-        { value: 'settings', label: 'Настройки' }
-    ];
-
-    // ========================================
-    // ПУБЛИЧНЫЕ МЕТОДЫ
-    // ========================================
+    var eventHandlers = [];
 
     /**
      * Инициализация модуля
-     * @param {Object} settings - Настройки из AppModule
+     * @param {Object} ctx - Контекст от AppModule
      */
-    function init(settings) {
-        console.log('[SettingsModule] Инициализация страницы "Настройки"');
-        
-        if (settings) {
-            widgetSettings = Object.assign({}, widgetSettings, settings);
-        }
-        
-        render();
-        setupFormHandlers();
+    function init(ctx) {
+        context = ctx;
+        console.log('[SettingsModule] Инициализация');
+
+        // Загружаем текущие настройки
+        var settings = ctx.getSettings ? ctx.getSettings() : {};
+        localSettings = Object.assign({}, localSettings, settings);
+
+        // Рендерим форму
+        renderForm();
+
+        // Настраиваем обработчики
+        setupEventListeners();
+
+        // Обновляем информацию
+        updateSubscriptionInfo();
     }
 
     /**
-     * Обработать получение записи из Grist
+     * Очистка ресурсов
+     */
+    function destroy() {
+        console.log('[SettingsModule] Уничтожение');
+
+        // Снимаем обработчики
+        eventHandlers.forEach(function(handler) {
+            if (handler.element && handler.event && handler.fn) {
+                handler.element.removeEventListener(handler.event, handler.fn);
+            }
+        });
+        eventHandlers = [];
+
+        context = null;
+    }
+
+    /**
+     * Обработка изменения записи
      * @param {Object} record - Данные записи
      */
     function onRecord(record) {
-        currentRecord = record;
-        console.log('[SettingsModule] Получена запись для страницы настроек');
+        // Настройки не зависят от записи
     }
 
     /**
-     * Обработать получение списка записей из Grist
-     * @param {Array} records - Массив записей
+     * Настроить обработчики событий
      */
-    function onRecords(records) {
-        recordsList = records;
-        console.log('[SettingsModule] Получено записей:', records.length);
-    }
-
-    /**
-     * Вызывается при навигации на эту страницу
-     */
-    function onNavigate() {
-        console.log('[SettingsModule] Переход на страницу настроек');
-        render();
-        syncFormWithSettings();
-    }
-
-    /**
-     * Обновить настройки виджета
-     * @param {Object} newSettings - Новые настройки
-     */
-    function updateSettings(newSettings) {
-        widgetSettings = Object.assign({}, widgetSettings, newSettings);
-        
-        // Уведомляем AppModule об изменениях
-        if (typeof AppModule !== 'undefined' && AppModule.updateSettings) {
-            AppModule.updateSettings(widgetSettings);
+    function setupEventListeners() {
+        // Форма настроек
+        var settingsForm = document.getElementById('settings-form');
+        if (settingsForm) {
+            var submitHandler = function(e) {
+                e.preventDefault();
+                saveSettings();
+            };
+            settingsForm.addEventListener('submit', submitHandler);
+            eventHandlers.push({ element: settingsForm, event: 'submit', fn: submitHandler });
         }
-        
-        console.log('[SettingsModule] Настройки обновлены:', widgetSettings);
+
+        // Кнопка сброса
+        var resetBtn = document.getElementById('reset-settings-btn');
+        if (resetBtn) {
+            var resetHandler = function() {
+                resetSettings();
+            };
+            resetBtn.addEventListener('click', resetHandler);
+            eventHandlers.push({ element: resetBtn, event: 'click', fn: resetHandler });
+        }
+
+        // Кнопка обновления информации
+        var refreshBtn = document.getElementById('refresh-info-btn');
+        if (refreshBtn) {
+            var refreshHandler = function() {
+                updateSubscriptionInfo();
+            };
+            refreshBtn.addEventListener('click', refreshHandler);
+            eventHandlers.push({ element: refreshBtn, event: 'click', fn: refreshHandler });
+        }
     }
 
     /**
-     * Сбросить настройки к значениям по умолчанию
+     * Отрисовать форму
      */
-    function resetToDefaults() {
-        widgetSettings = {
+    function renderForm() {
+        var autoSwitchSelect = document.getElementById('auto-switch');
+        var defaultPageSelect = document.getElementById('default-page');
+
+        if (autoSwitchSelect) {
+            autoSwitchSelect.value = localSettings.autoSwitch || 'disabled';
+        }
+
+        if (defaultPageSelect) {
+            defaultPageSelect.value = localSettings.defaultPage || 'home';
+        }
+    }
+
+    /**
+     * Сохранить настройки
+     */
+    function saveSettings() {
+        var autoSwitchSelect = document.getElementById('auto-switch');
+        var defaultPageSelect = document.getElementById('default-page');
+
+        var newSettings = {
+            autoSwitch: autoSwitchSelect ? autoSwitchSelect.value : 'disabled',
+            defaultPage: defaultPageSelect ? defaultPageSelect.value : 'home'
+        };
+
+        // Обновляем через контекст
+        if (context && context.updateSettings) {
+            context.updateSettings(newSettings);
+        }
+
+        localSettings = newSettings;
+
+        context.showStatusMessage('Настройки сохранены', 'success');
+        updateSubscriptionInfo();
+    }
+
+    /**
+     * Сбросить настройки
+     */
+    function resetSettings() {
+        if (!confirm('Сбросить настройки к значениям по умолчанию?')) {
+            return;
+        }
+
+        localSettings = {
             autoSwitch: 'disabled',
             defaultPage: 'home'
         };
-        
-        updateSettings(widgetSettings);
-        syncFormWithSettings();
-        
-        AppModule.showStatusMessage('Настройки сброшены к значениям по умолчанию', 'info');
-    }
 
-    /**
-     * Экспортировать настройки в JSON
-     * @returns {string}
-     */
-    function exportSettings() {
-        return JSON.stringify(widgetSettings, null, 2);
-    }
-
-    /**
-     * Импортировать настройки из JSON
-     * @param {string} jsonString - JSON строка с настройками
-     * @returns {boolean}
-     */
-    function importSettings(jsonString) {
-        try {
-            var imported = JSON.parse(jsonString);
-            
-            // Валидация импортированных настроек
-            if (typeof imported.autoSwitch === 'string') {
-                widgetSettings.autoSwitch = imported.autoSwitch;
-            }
-            if (typeof imported.defaultPage === 'string') {
-                widgetSettings.defaultPage = imported.defaultPage;
-            }
-            
-            updateSettings(widgetSettings);
-            syncFormWithSettings();
-            
-            AppModule.showStatusMessage('Настройки успешно импортированы', 'success');
-            return true;
-        } catch (e) {
-            console.error('[SettingsModule] Ошибка импорта настроек:', e);
-            AppModule.showStatusMessage('Ошибка импорта: неверный формат JSON', 'error');
-            return false;
+        if (context && context.updateSettings) {
+            context.updateSettings(localSettings);
         }
+
+        renderForm();
+        context.showStatusMessage('Настройки сброшены', 'info');
     }
 
-    // ========================================
-    // ПРИВАТНЫЕ МЕТОДЫ
-    // ========================================
-
     /**
-     * Отрисовка содержимого страницы
+     * Обновить информацию о подписках
      */
-    function render() {
-        // Дополнительная информация о записи
-        var recordInfoDiv = document.getElementById('settings-record-info');
-        
-        if (recordInfoDiv) {
-            if (currentRecord && currentRecord.id) {
-                recordInfoDiv.style.display = 'block';
-                recordInfoDiv.innerHTML = '<strong>Активная запись:</strong> #' + currentRecord.id;
-            } else {
-                recordInfoDiv.style.display = 'none';
-            }
+    function updateSubscriptionInfo() {
+        // Текущий экран
+        var screenEl = document.getElementById('info-current-screen');
+        if (screenEl && context && context.getCurrentScreen) {
+            screenEl.textContent = context.getCurrentScreen() || '-';
         }
-    }
 
-    /**
-     * Настроить обработчики формы
-     */
-    function setupFormHandlers() {
-        var settingsForm = document.getElementById('settings-form');
-        
-        if (settingsForm) {
-            // Обработчик отправки формы уже установлен в app.js
-            // Добавляем кнопку сброса
-            var resetBtn = document.createElement('button');
-            resetBtn.type = 'button';
-            resetBtn.className = 'btn btn-outline-secondary mt-2';
-            resetBtn.textContent = '↺ Сбросить настройки';
-            resetBtn.onclick = resetToDefaults;
-            
-            // Вставляем кнопку после кнопки сохранения
-            var submitBtn = settingsForm.querySelector('button[type="submit"]');
-            if (submitBtn && submitBtn.parentNode) {
-                submitBtn.parentNode.insertBefore(resetBtn, submitBtn.nextSibling);
-            }
+        // Количество подписок
+        var countEl = document.getElementById('info-subscription-count');
+        if (countEl && typeof SubscriptionsManager !== 'undefined') {
+            var count = SubscriptionsManager.getTotalSubscriptionCount();
+            countEl.textContent = count;
         }
-    }
-
-    /**
-     * Синхронизировать форму с текущими настройками
-     */
-    function syncFormWithSettings() {
-        var autoSwitchSelect = document.getElementById('auto-switch');
-        var defaultPageSelect = document.getElementById('default-page');
-        
-        if (autoSwitchSelect) {
-            autoSwitchSelect.value = widgetSettings.autoSwitch || 'disabled';
-        }
-        
-        if (defaultPageSelect) {
-            defaultPageSelect.value = widgetSettings.defaultPage || 'home';
-        }
-    }
-
-    /**
-     * Получить доступные страницы для выбора
-     * @returns {Array}
-     */
-    function getAvailablePages() {
-        return availablePages.slice();
-    }
-
-    /**
-     * Проверить, включено ли автоматическое переключение
-     * @returns {boolean}
-     */
-    function isAutoSwitchEnabled() {
-        return widgetSettings.autoSwitch === 'enabled';
-    }
-
-    /**
-     * Получить текущую страницу по умолчанию
-     * @returns {string}
-     */
-    function getDefaultPage() {
-        return widgetSettings.defaultPage;
-    }
-
-    /**
-     * Получить все настройки
-     * @returns {Object}
-     */
-    function getAllSettings() {
-        return Object.assign({}, widgetSettings);
     }
 
     // ========================================
@@ -258,16 +201,7 @@ var SettingsModule = (function() {
 
     return {
         init: init,
-        onRecord: onRecord,
-        onRecords: onRecords,
-        onNavigate: onNavigate,
-        updateSettings: updateSettings,
-        resetToDefaults: resetToDefaults,
-        exportSettings: exportSettings,
-        importSettings: importSettings,
-        getAvailablePages: getAvailablePages,
-        isAutoSwitchEnabled: isAutoSwitchEnabled,
-        getDefaultPage: getDefaultPage,
-        getAllSettings: getAllSettings
+        destroy: destroy,
+        onRecord: onRecord
     };
 })();

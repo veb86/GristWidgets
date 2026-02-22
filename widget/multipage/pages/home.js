@@ -1,137 +1,160 @@
 /**
  * Модуль страницы "Главная"
  * 
- * Отображает приветственную информацию и общую сводку
- * 
- * @module HomeModule
+ * Экспорт интерфейса:
+ * - init(context) - инициализация
+ * - destroy() - очистка ресурсов
+ * - onRecord(record) - обработка записи (опционально)
+ * - onRecords(records) - обработка списка записей (опционально)
  */
 
 var HomeModule = (function() {
     'use strict';
 
-    // ========================================
-    // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
-    // ========================================
+    /**
+     * Контекст экрана
+     * @type {Object|null}
+     */
+    var context = null;
 
     /**
-     * Текущая запись из Grist
+     * Текущая запись
      * @type {Object|null}
      */
     var currentRecord = null;
 
     /**
-     * Список всех записей
+     * Список записей
      * @type {Array}
      */
     var recordsList = [];
 
-    // ========================================
-    // ПУБЛИЧНЫЕ МЕТОДЫ
-    // ========================================
-
     /**
      * Инициализация модуля
+     * @param {Object} ctx - Контекст от AppModule
      */
-    function init() {
-        console.log('[HomeModule] Инициализация страницы "Главная"');
+    function init(ctx) {
+        context = ctx;
+        console.log('[HomeModule] Инициализация');
+
+        // Восстанавливаем данные из контекста
+        currentRecord = ctx.currentRecord;
+        recordsList = ctx.recordsList || [];
+
+        // Рендерим содержимое
         render();
+
+        // Подписываемся на изменения через менеджер подписок
+        subscribeToGrist();
     }
 
     /**
-     * Обработать получение записи из Grist
+     * Очистка ресурсов
+     */
+    function destroy() {
+        console.log('[HomeModule] Уничтожение');
+        context = null;
+        currentRecord = null;
+        recordsList = [];
+    }
+
+    /**
+     * Обработка изменения записи
      * @param {Object} record - Данные записи
      */
     function onRecord(record) {
         currentRecord = record;
-        console.log('[HomeModule] Получена запись для главной страницы');
+        console.log('[HomeModule] Получена запись');
         render();
     }
 
     /**
-     * Обработать получение списка записей из Grist
+     * Обработка изменения списка записей
      * @param {Array} records - Массив записей
      */
     function onRecords(records) {
         recordsList = records;
         console.log('[HomeModule] Получено записей:', records.length);
+        renderStatistics();
     }
 
     /**
-     * Вызывается при навигации на эту страницу
+     * Подписка на Grist API через менеджер
      */
-    function onNavigate() {
-        console.log('[HomeModule] Переход на главную страницу');
-        render();
+    function subscribeToGrist() {
+        if (!context || !context.grist) {
+            console.log('[HomeModule] Grist API недоступен');
+            return;
+        }
+
+        // Подписка уже обрабатывается глобально в AppModule
+        // Здесь можно добавить специфичные подписки если нужно
     }
 
     /**
-     * Отрисовка содержимого страницы
+     * Отрисовка содержимого
      */
     function render() {
-        var recordInfoBlock = document.getElementById('home-record-info');
-        var recordDataPre = document.getElementById('home-record-data');
+        renderRecordInfo();
+        renderStatistics();
+    }
 
-        if (recordInfoBlock && recordDataPre) {
-            if (currentRecord && Object.keys(currentRecord).length > 0) {
-                // Форматируем данные для отображения
-                var formattedData = formatRecordData(currentRecord);
-                recordDataPre.textContent = formattedData;
-                recordInfoBlock.style.display = 'block';
+    /**
+     * Отрисовка информации о записи
+     */
+    function renderRecordInfo() {
+        var infoBlock = document.getElementById('home-record-info');
+        var dataPre = document.getElementById('home-record-data');
+
+        if (!infoBlock || !dataPre) return;
+
+        if (currentRecord && Object.keys(currentRecord).length > 0) {
+            dataPre.textContent = formatRecordData(currentRecord);
+            infoBlock.style.display = 'block';
+        } else {
+            infoBlock.style.display = 'none';
+        }
+    }
+
+    /**
+     * Отрисовка статистики
+     */
+    function renderStatistics() {
+        // Всего записей
+        var totalEl = document.getElementById('stat-total-records');
+        if (totalEl) {
+            totalEl.textContent = recordsList.length;
+        }
+
+        // Текущий экран
+        var screenEl = document.getElementById('stat-current-screen');
+        if (screenEl && context) {
+            screenEl.textContent = context.getCurrentScreen ? context.getCurrentScreen() : '-';
+        }
+
+        // Статус записи
+        var statusEl = document.getElementById('stat-status');
+        if (statusEl) {
+            if (currentRecord) {
+                var status = currentRecord.Status || currentRecord.status || '-';
+                statusEl.textContent = status;
             } else {
-                recordInfoBlock.style.display = 'none';
+                statusEl.textContent = '-';
             }
         }
     }
 
     /**
-     * Получить сводную статистику
-     * @returns {Object}
-     */
-    function getStatistics() {
-        var stats = {
-            totalRecords: recordsList.length,
-            hasCurrentRecord: !!currentRecord
-        };
-
-        // Подсчёт записей по статусам (если есть поле Status)
-        if (recordsList.length > 0) {
-            stats.byStatus = {
-                done: 0,
-                draft: 0,
-                other: 0
-            };
-
-            recordsList.forEach(function(record) {
-                var status = record.Status || record.status;
-                if (status === 'Done' || status === 'done') {
-                    stats.byStatus.done++;
-                } else if (status === 'Draft' || status === 'draft') {
-                    stats.byStatus.draft++;
-                } else {
-                    stats.byStatus.other++;
-                }
-            });
-        }
-
-        return stats;
-    }
-
-    // ========================================
-    // ПРИВАТНЫЕ МЕТОДЫ
-    // ========================================
-
-    /**
-     * Форматировать данные записи для отображения
+     * Форматирование данных записи
      * @param {Object} record - Данные записи
      * @returns {string}
      */
     function formatRecordData(record) {
         var output = [];
-        
+
         for (var key in record) {
             if (record.hasOwnProperty(key) && key !== 'id') {
                 var value = record[key];
-                // Форматируем значение
                 if (typeof value === 'object' && value !== null) {
                     value = JSON.stringify(value);
                 }
@@ -139,7 +162,6 @@ var HomeModule = (function() {
             }
         }
 
-        // Добавляем ID записи в начало
         if (record.id) {
             output.unshift('ID: ' + record.id);
         }
@@ -153,9 +175,8 @@ var HomeModule = (function() {
 
     return {
         init: init,
+        destroy: destroy,
         onRecord: onRecord,
-        onRecords: onRecords,
-        onNavigate: onNavigate,
-        getStatistics: getStatistics
+        onRecords: onRecords
     };
 })();

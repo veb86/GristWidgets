@@ -1,0 +1,91 @@
+/* Стили для виджета Random Line */
+
+.widget-container {
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-weight: 500;
+}
+
+.log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+}
+
+.log-entry {
+    margin-bottom: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.log-entry.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.log-entry.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.log-entry.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.log-entry .timestamp {
+    color: #6c757d;
+    margin-right: 8px;
+}
+
+.progress-container {
+    transition: all 0.3s ease;
+}
+
+#result-alert {
+    border-radius: 8px;
+}
+
+/* Анимация пульсации для индикатора соединения */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.connection-checking {
+    animation: pulse 1s infinite;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 576px) {
+    .widget-container {
+        padding: 10px;
+    }
+    
+    .btn-lg {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+}

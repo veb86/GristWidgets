@@ -1,0 +1,41 @@
+{
+  "name": "Random Line Widget",
+  "description": "Виджет для создания случайных линий в ZCAD через TCP",
+  "version": "1.0.0",
+  "author": "ZCAD Team",
+  "grist": {
+    "name": "RandomLine",
+    "url": "index.html",
+    "widgetId": "randomline",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full",
+    "hasCustomOptions": true,
+    "fields": [
+      {
+        "name": "flaskUrl",
+        "title": "Flask API URL",
+        "type": "string",
+        "description": "URL Flask сервера (например, http://127.0.0.1:5000)"
+      },
+      {
+        "name": "zcadHost",
+        "title": "ZCAD Host",
+        "type": "string",
+        "description": "Хост ZCAD (по умолчанию 127.0.0.1)"
+      },
+      {
+        "name": "zcadPort",
+        "title": "ZCAD Port",
+        "type": "integer",
+        "description": "Порт ZCAD (по умолчанию 7777)"
+      }
+    ]
+  },
+  "features": {
+    "tcpClient": true,
+    "batchMode": true,
+    "progressTracking": true
+  }
+}

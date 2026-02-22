@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BDTree Widget</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="widget-header">
+      <h2>Выбор группы устройств</h2>
+      <span id="selected-info" class="selected-info">Не выбрано</span>
+    </header>
+
+    <div id="message-container"></div>
+
+    <div class="tree-container">
+      <div id="tree-root" class="tree-root">
+        <!-- Дерево будет построено динамически -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Grist widget API -->
+  <script src="./grist-plugin-api.js"></script>
+
+  <!-- Application modules -->
+  <script src="./js/config.js"></script>
+  <script src="./js/grist-api.js"></script>
+  <script src="./js/tree.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

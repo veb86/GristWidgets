@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BDControl - Проверка таблиц</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 20px; }
+    .status {
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    pre {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 400px;
+      font-size: 12px;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .btn-success {
+      background: #28a745;
+    }
+    .btn-success:hover {
+      background: #1e7e34;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Проверка таблиц Grist</h1>
+    
+    <div id="status-container"></div>
+    
+    <h2>Доступные таблицы в документе</h2>
+    <div id="tables-list"></div>
+    
+    <h2>Структура таблиц</h2>
+    <div id="tables-structure"></div>
+    
+    <h2>Данные для виджета BDControl</h2>
+    <div id="widget-data"></div>
+    
+    <h2>Сырые данные</h2>
+    <pre id="raw-data">Загрузка...</pre>
+  </div>
+
+  <script src="./grist-plugin-api.js"></script>
+  <script>
+    async function checkTables() {
+      const statusContainer = document.getElementById('status-container');
+      const tablesListDiv = document.getElementById('tables-list');
+      const tablesStructureDiv = document.getElementById('tables-structure');
+      const widgetDataDiv = document.getElementById('widget-data');
+      const rawDataPre = document.getElementById('raw-data');
+
+      try {
+        // Инициализация
+        grist.ready({ requiredAccess: 'full' });
+
+        // 1. Получаем список всех таблиц
+        statusContainer.innerHTML = '<div class="status info">Загрузка списка таблиц...</div>';
+        
+        const allTables = await grist.docApi.fetchTable('_grist_Tables');
+        console.log('Все таблицы:', allTables);
+
+        // Отображаем список таблиц
+        if (allTables && allTables.id && allTables.tableId) {
+          let tablesHtml = '<table><thead><tr><th>ID</th><th>Имя таблицы</th></tr></thead><tbody>';
+          
+          for (let i = 0; i < allTables.id.length; i++) {
+            const tableName = allTables.tableId[i];
+            const tableId = allTables.id[i];
+            tablesHtml += `<tr><td>${tableId}</td><td><strong>${tableName}</strong></td></tr>`;
+          }
+          
+          tablesHtml += '</tbody></table>';
+          tablesListDiv.innerHTML = tablesHtml;
+
+          // Проверяем наличие нужных таблиц
+          const requiredTables = ['device_groups', 'device', 'SYSTEM'];
+          const availableTables = allTables.tableId || [];
+          
+          let checkHtml = '<div style="margin: 15px 0;">';
+          requiredTables.forEach(tableName => {
+            const exists = availableTables.includes(tableName);
+            checkHtml += `<div class="status ${exists ? 'success' : 'error'}">`;
+            checkHtml += `<strong>${tableName}:</strong> ${exists ? '✓ Найдена' : '✗ Не найдена'}`;
+            checkHtml += `</div>`;
+          });
+          checkHtml += '</div>';
+          statusContainer.innerHTML = checkHtml;
+
+          // 2. Загружаем данные из нужных таблиц
+          let widgetDataHtml = '<h3>Проверка данных для виджета</h3>';
+          let rawData = {};
+
+          for (const tableName of requiredTables) {
+            try {
+              widgetDataHtml += `<div class="status info">Загрузка таблицы "${tableName}"...</div>`;
+              widgetDataDiv.innerHTML = widgetDataHtml;
+
+              const tableData = await grist.docApi.fetchTable(tableName);
+              rawData[tableName] = tableData;
+
+              const recordCount = tableData && tableData.id ? tableData.id.length : 0;
+              const columns = tableData ? Object.keys(tableData).filter(k => k !== 'id') : [];
+
+              widgetDataHtml += `<div class="status success">`;
+              widgetDataHtml += `<strong>${tableName}:</strong> ${recordCount} записей, столбцы: ${columns.join(', ')}`;
+              widgetDataHtml += `</div>`;
+              widgetDataDiv.innerHTML = widgetDataHtml;
+
+              // Показываем первые 3 записи
+              if (recordCount > 0) {
+                let previewHtml = `<h4>${tableName} (первые 3 записи):</h4><table><thead><tr>`;
+                
+                columns.forEach(col => {
+                  previewHtml += `<th>${col}</th>`;
+                });
+                
+                previewHtml += '</tr></thead><tbody>';
+                
+                for (let i = 0; i < Math.min(3, recordCount); i++) {
+                  previewHtml += '<tr>';
+                  columns.forEach(col => {
+                    previewHtml += `<td>${tableData[col][i] || ''}</td>`;
+                  });
+                  previewHtml += '</tr>';
+                }
+                
+                previewHtml += '</tbody></table>';
+                tablesStructureDiv.innerHTML += previewHtml;
+              }
+
+            } catch (error) {
+              widgetDataHtml += `<div class="status error"><strong>${tableName}:</strong> Ошибка: ${error.message}</div>`;
+              widgetDataDiv.innerHTML = widgetDataHtml;
+              rawData[tableName] = { error: error.message };
+            }
+          }
+
+          // Отображаем сырые данные
+          rawDataPre.textContent = JSON.stringify(rawData, null, 2);
+
+        } else {
+          statusContainer.innerHTML = '<div class="status error">Не удалось получить список таблиц</div>';
+        }
+
+      } catch (error) {
+        console.error('Ошибка:', error);
+        statusContainer.innerHTML = `<div class="status error">Ошибка: ${error.message}</div>`;
+        rawDataPre.textContent = error.stack;
+      }
+    }
+
+    // Запуск проверки
+    checkTables();
+  </script>
+</body>
+</html>

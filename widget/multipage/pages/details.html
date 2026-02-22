@@ -1,0 +1,52 @@
+<!--
+    HTML-фрагмент страницы "Детали"
+    Не содержит <html>, <head>, <body>, <script>
+-->
+
+<div class="screen-details">
+    <!-- Блок с информацией о текущей записи Grist -->
+    <div id="details-record-section" class="mb-3" style="display: none;">
+        <div class="alert alert-warning">
+            <strong>📌 Текущая запись Grist:</strong>
+            <pre id="details-record-data"></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">📋 Детали таблиц</h5>
+        </div>
+        <div class="card-body">
+            <!-- Селектор таблиц -->
+            <div class="table-selector">
+                <label for="details-table-select" class="form-label">
+                    <strong>Выберите таблицу:</strong>
+                </label>
+                <select id="details-table-select" class="form-select">
+                    <option value="">-- Загрузка таблиц... --</option>
+                </select>
+                <div class="form-text">Выберите таблицу для просмотра и редактирования данных</div>
+            </div>
+
+            <!-- Кнопка добавления строки -->
+            <div class="mb-3 mt-3">
+                <button id="details-add-row-btn" class="btn btn-primary">
+                    ➕ Добавить строку
+                </button>
+            </div>
+
+            <!-- Контейнер для таблицы -->
+            <div id="details-table-container" class="table-container"></div>
+
+            <!-- Навигация -->
+            <div class="mt-4">
+                <button class="btn btn-secondary" onclick="navigate('home')">
+                    ← На главную
+                </button>
+                <button class="btn btn-outline-primary ms-2" onclick="navigate('settings')">
+                    ⚙️ Настройки
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

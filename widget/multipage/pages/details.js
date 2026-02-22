@@ -1,30 +1,29 @@
 /**
  * Модуль страницы "Детали"
  * 
- * Отображает детальную информацию о текущей записи
- * Поддерживает работу с таблицами Grist (как в edittable)
+ * Отображает список таблиц Grist и позволяет работать с данными.
  * 
- * @module DetailsModule
+ * Экспорт интерфейса:
+ * - init(context) - инициализация
+ * - destroy() - очистка ресурсов
+ * - onRecord(record) - обработка записи (опционально)
+ * - onRecords(records) - обработка списка записей (опционально)
  */
 
 var DetailsModule = (function() {
     'use strict';
 
-    // ========================================
-    // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
-    // ========================================
+    /**
+     * Контекст экрана
+     * @type {Object|null}
+     */
+    var context = null;
 
     /**
      * Текущая запись из Grist
      * @type {Object|null}
      */
     var currentRecord = null;
-
-    /**
-     * Список всех записей
-     * @type {Array}
-     */
-    var recordsList = [];
 
     /**
      * Экземпляр Tabulator
@@ -39,13 +38,13 @@ var DetailsModule = (function() {
     var currentTableId = null;
 
     /**
-     * Текущие записи таблицы
+     * Данные таблицы
      * @type {Array}
      */
     var tableRecords = [];
 
     /**
-     * Текущие колонки таблицы
+     * Колонки таблицы
      * @type {Array}
      */
     var tableColumns = [];
@@ -56,46 +55,104 @@ var DetailsModule = (function() {
      */
     var columnMetadata = [];
 
-    // ========================================
-    // ПУБЛИЧНЫЕ МЕТОДЫ
-    // ========================================
+    /**
+     * Обработчики событий
+     * @type {Array}
+     */
+    var eventHandlers = [];
 
     /**
      * Инициализация модуля
+     * @param {Object} ctx - Контекст от AppModule
      */
-    function init() {
-        console.log('[DetailsModule] Инициализация страницы "Детали"');
-        setupEventListeners();
+    function init(ctx) {
+        context = ctx;
+        console.log('[DetailsModule] Инициализация');
+
+        currentRecord = ctx.currentRecord;
+
+        // Рендерим и загружаем таблицы
+        renderRecordInfo();
         loadTablesList();
+
+        // Навешиваем обработчики
+        setupEventListeners();
     }
 
     /**
-     * Обработать получение записи из Grist
+     * Очистка ресурсов
+     */
+    function destroy() {
+        console.log('[DetailsModule] Уничтожение');
+
+        // Уничтожаем Tabulator
+        if (tabulatorInstance) {
+            try {
+                tabulatorInstance.destroy();
+            } catch (e) {
+                console.warn('[DetailsModule] Ошибка при уничтожении таблицы:', e);
+            }
+            tabulatorInstance = null;
+        }
+
+        // Снимаем обработчики событий
+        eventHandlers.forEach(function(handler) {
+            if (handler.element && handler.event && handler.fn) {
+                handler.element.removeEventListener(handler.event, handler.fn);
+            }
+        });
+        eventHandlers = [];
+
+        // Очищаем данные
+        context = null;
+        currentRecord = null;
+        currentTableId = null;
+        tableRecords = [];
+        tableColumns = [];
+        columnMetadata = [];
+    }
+
+    /**
+     * Обработка изменения записи
      * @param {Object} record - Данные записи
      */
     function onRecord(record) {
         currentRecord = record;
-        console.log('[DetailsModule] Получена запись для страницы деталей');
+        console.log('[DetailsModule] Получена запись');
         renderRecordInfo();
     }
 
     /**
-     * Обработать получение списка записей из Grist
-     * @param {Array} records - Массив записей
+     * Настроить обработчики событий
      */
-    function onRecords(records) {
-        recordsList = records;
-        console.log('[DetailsModule] Получено записей:', records.length);
-    }
+    function setupEventListeners() {
+        // Селектор таблиц
+        var tableSelect = document.getElementById('details-table-select');
+        if (tableSelect) {
+            var changeHandler = function() {
+                var selectedTableId = this.value;
+                if (selectedTableId) {
+                    loadTableData(selectedTableId);
+                } else {
+                    clearTable();
+                }
+            };
+            tableSelect.addEventListener('change', changeHandler);
+            eventHandlers.push({ element: tableSelect, event: 'change', fn: changeHandler });
+        }
 
-    /**
-     * Вызывается при навигации на эту страницу
-     */
-    function onNavigate() {
-        console.log('[DetailsModule] Переход на страницу деталей');
-        renderRecordInfo();
-        if (!tabulatorInstance && currentTableId) {
-            renderTable();
+        // Кнопка добавления строки
+        var addRowBtn = document.getElementById('details-add-row-btn');
+        if (addRowBtn) {
+            var clickHandler = function() {
+                if (tabulatorInstance) {
+                    addNewRow();
+                } else {
+                    context.showStatusMessage('Сначала выберите таблицу', 'warning');
+                }
+            };
+            addRowBtn.addEventListener('click', clickHandler);
+            eventHandlers.push({ element: addRowBtn, event: 'click', fn: clickHandler });
         }
     }
 
@@ -104,9 +161,9 @@ var DetailsModule = (function() {
      */
     async function loadTablesList() {
         try {
-            var tables = await AppModule.loadTables();
+            var tables = await context.loadTables();
             var tableSelect = document.getElementById('details-table-select');
-            
+
             if (tableSelect) {
                 tableSelect.innerHTML = '<option value="">-- Выберите таблицу --</option>';
 
@@ -127,7 +184,7 @@ var DetailsModule = (function() {
             }
         } catch (error) {
             console.error('[DetailsModule] Ошибка загрузки списка таблиц:', error);
-            AppModule.showStatusMessage('Ошибка загрузки таблиц: ' + error.message, 'error');
+            context.showStatusMessage('Ошибка загрузки таблиц: ' + error.message, 'error');
         }
     }
 
@@ -138,24 +195,20 @@ var DetailsModule = (function() {
     async function loadTableData(tableId) {
         try {
             currentTableId = tableId;
-            
-            // Загрузить данные таблицы
-            var tableData = await AppModule.loadTableData(tableId);
-            
-            // Загрузить метаданные колонок
-            var metadata = await AppModule.loadTableMetadata(tableId);
+
+            // Загружаем данные и метаданные параллельно
+            var tableData = await context.loadTableData(tableId);
+            var metadata = await context.loadTableMetadata(tableId);
             columnMetadata = metadata;
 
             if (!tableData || !tableData.id || !Array.isArray(tableData.id)) {
-                AppModule.showStatusMessage('Таблица пуста или не содержит данных', 'warning');
+                context.showStatusMessage('Таблица пуста или не содержит данных', 'warning');
                 clearTable();
                 return;
             }
 
-            // Преобразовать данные
+            // Преобразуем данные
             var records = [];
-            var columns = [];
-
             for (var i = 0; i < tableData.id.length; i++) {
                 var record = { id: tableData.id[i] };
                 for (var col in tableData) {
@@ -166,7 +219,8 @@ var DetailsModule = (function() {
                 records.push(record);
             }
 
-            // Получить список колонок
+            // Получаем список колонок
+            var columns = [];
             if (records.length > 0) {
                 columns = Object.keys(records[0]).filter(function(key) {
                     return key !== 'id';
@@ -176,13 +230,13 @@ var DetailsModule = (function() {
             tableRecords = records;
             tableColumns = columns;
 
-            // Отрисовать таблицу
+            // Отрисовываем таблицу
             renderTable();
 
-            AppModule.showStatusMessage('Загружено ' + records.length + ' записей из таблицы "' + tableId + '"', 'success');
+            context.showStatusMessage('Загружено ' + records.length + ' записей из таблицы "' + tableId + '"', 'success');
         } catch (error) {
             console.error('[DetailsModule] Ошибка загрузки данных таблицы:', error);
-            AppModule.showStatusMessage('Ошибка загрузки данных: ' + error.message, 'error');
+            context.showStatusMessage('Ошибка загрузки данных: ' + error.message, 'error');
         }
     }
 
@@ -200,40 +254,6 @@ var DetailsModule = (function() {
         return false;
     }
 
-    // ========================================
-    // ПРИВАТНЫЕ МЕТОДЫ
-    // ========================================
-
-    /**
-     * Настроить обработчики событий
-     */
-    function setupEventListeners() {
-        // Обработчик изменения выбора таблицы
-        var tableSelect = document.getElementById('details-table-select');
-        if (tableSelect) {
-            tableSelect.addEventListener('change', function() {
-                var selectedTableId = this.value;
-                if (selectedTableId) {
-                    loadTableData(selectedTableId);
-                } else {
-                    clearTable();
-                }
-            });
-        }
-
-        // Обработчик кнопки добавления строки
-        var addRowBtn = document.getElementById('details-add-row-btn');
-        if (addRowBtn) {
-            addRowBtn.addEventListener('click', function() {
-                if (tabulatorInstance) {
-                    addNewRow();
-                } else {
-                    AppModule.showStatusMessage('Сначала выберите таблицу', 'warning');
-                }
-            });
-        }
-    }
-
     /**
      * Отрисовать информацию о записи
      */
@@ -243,8 +263,7 @@ var DetailsModule = (function() {
 
         if (recordSection && recordDataPre) {
             if (currentRecord && Object.keys(currentRecord).length > 0) {
-                var formattedData = formatRecordData(currentRecord);
-                recordDataPre.textContent = formattedData;
+                recordDataPre.textContent = formatRecordData(currentRecord);
                 recordSection.style.display = 'block';
             } else {
                 recordSection.style.display = 'none';
@@ -261,7 +280,7 @@ var DetailsModule = (function() {
         var container = document.getElementById('details-table-container');
         if (!container) return;
 
-        // Подготовить колонки для Tabulator
+        // Подготавливаем колонки для Tabulator
         var tabulatorColumns = tableColumns.map(function(col) {
             var isFormula = isColumnFormula(col);
 
@@ -281,7 +300,7 @@ var DetailsModule = (function() {
             return columnDef;
         });
 
-        // Добавить колонку с кнопками действий
+        // Добавляем колонку с кнопками действий
         tabulatorColumns.push({
             title: "Действия",
             field: "controls",
@@ -292,7 +311,8 @@ var DetailsModule = (function() {
                 var rowId = rowData.id;
 
                 if (rowId && typeof rowId === 'number') {
-                    return '<button class="btn btn-sm btn-primary update-btn">Изменить</button> <button class="btn btn-sm btn-danger delete-btn">Удалить</button>';
+                    return '<button class="btn btn-sm btn-primary update-btn">Изменить</button> ' +
+                           '<button class="btn btn-sm btn-danger delete-btn">Удалить</button>';
                 } else {
                     return '<button class="btn btn-sm btn-success save-btn">Сохранить</button>';
                 }
@@ -311,7 +331,7 @@ var DetailsModule = (function() {
             }
         });
 
-        // Создать таблицу
+        // Создаём таблицу
         tabulatorInstance = new Tabulator("#details-table-container", {
             data: tableRecords,
             columns: tabulatorColumns,
@@ -329,14 +349,14 @@ var DetailsModule = (function() {
 
                 if (isColumnFormula(field)) {
                     cell.setValue(cell.getOldValue());
-                    AppModule.showStatusMessage('Невозможно редактировать формульный столбец "' + field + '"', 'warning');
+                    context.showStatusMessage('Невозможно редактировать формульный столбец "' + field + '"', 'warning');
                     return;
                 }
 
                 if (!rowId || typeof rowId === 'string') {
                     // Новая строка - локальное обновление
                 } else {
-                    // Пометить строку как изменённую
+                    // Помечаем строку как изменённую
                     var updateBtn = cell.getRow().getElement().querySelector('.update-btn');
                     if (updateBtn) {
                         updateBtn.classList.add('btn-warning');
@@ -370,7 +390,7 @@ var DetailsModule = (function() {
      */
     function addNewRow() {
         var newRecord = { id: 'new' };
-        
+
         tableColumns.forEach(function(col) {
             newRecord[col] = '';
         });
@@ -386,7 +406,7 @@ var DetailsModule = (function() {
 
         try {
             var updateObj = {};
-            
+
             tableColumns.forEach(function(col) {
                 if (!isColumnFormula(col) && col !== 'id') {
                     if (typeof rowData[col] !== 'undefined') {
@@ -396,13 +416,13 @@ var DetailsModule = (function() {
             });
 
             if (Object.keys(updateObj).length === 0) {
-                AppModule.showStatusMessage('Нет полей для обновления', 'warning');
+                context.showStatusMessage('Нет полей для обновления', 'warning');
                 return;
             }
 
-            await AppModule.updateRecord(currentTableId, rowId, updateObj);
-            
-            AppModule.showStatusMessage('Запись ID ' + rowId + ' успешно обновлена', 'success');
+            await context.updateRecord(currentTableId, rowId, updateObj);
+
+            context.showStatusMessage('Запись ID ' + rowId + ' успешно обновлена', 'success');
 
             var updateBtn = row.getElement().querySelector('.update-btn');
             if (updateBtn) {
@@ -411,7 +431,7 @@ var DetailsModule = (function() {
             }
         } catch (error) {
             console.error('[DetailsModule] Ошибка обновления записи:', error);
-            AppModule.showStatusMessage('Ошибка обновления: ' + error.message, 'error');
+            context.showStatusMessage('Ошибка обновления: ' + error.message, 'error');
         }
     }
 
@@ -422,15 +442,15 @@ var DetailsModule = (function() {
         if (!currentTableId || !confirm('Удалить запись #' + rowId + '?')) return;
 
         try {
-            await AppModule.deleteRecord(currentTableId, rowId);
-            
-            AppModule.showStatusMessage('Запись ID ' + rowId + ' успешно удалена', 'success');
-            
-            // Перезагрузить таблицу
+            await context.deleteRecord(currentTableId, rowId);
+
+            context.showStatusMessage('Запись ID ' + rowId + ' успешно удалена', 'success');
+
+            // Перезагружаем таблицу
             loadTableData(currentTableId);
         } catch (error) {
             console.error('[DetailsModule] Ошибка удаления записи:', error);
-            AppModule.showStatusMessage('Ошибка удаления: ' + error.message, 'error');
+            context.showStatusMessage('Ошибка удаления: ' + error.message, 'error');
         }
     }
 
@@ -442,7 +462,7 @@ var DetailsModule = (function() {
 
         try {
             var columnValues = {};
-            
+
             tableColumns.forEach(function(col) {
                 if (!isColumnFormula(col) && col !== 'id') {
                     if (typeof rowData[col] !== 'undefined' && rowData[col] !== '') {
@@ -454,19 +474,19 @@ var DetailsModule = (function() {
             });
 
             if (Object.keys(columnValues).length === 0) {
-                AppModule.showStatusMessage('Нет данных для сохранения', 'warning');
+                context.showStatusMessage('Нет данных для сохранения', 'warning');
                 return;
             }
 
-            await AppModule.addRecord(currentTableId, columnValues);
-            
-            AppModule.showStatusMessage('Запись успешно создана', 'success');
-            
-            // Перезагрузить таблицу
+            await context.addRecord(currentTableId, columnValues);
+
+            context.showStatusMessage('Запись успешно создана', 'success');
+
+            // Перезагружаем таблицу
             loadTableData(currentTableId);
         } catch (error) {
             console.error('[DetailsModule] Ошибка создания записи:', error);
-            AppModule.showStatusMessage('Ошибка создания: ' + error.message, 'error');
+            context.showStatusMessage('Ошибка создания: ' + error.message, 'error');
         }
     }
 
@@ -475,7 +495,7 @@ var DetailsModule = (function() {
      */
     function formatRecordData(record) {
         var output = [];
-        
+
         for (var key in record) {
             if (record.hasOwnProperty(key) && key !== 'id') {
                 var value = record[key];
@@ -499,11 +519,7 @@ var DetailsModule = (function() {
 
     return {
         init: init,
-        onRecord: onRecord,
-        onRecords: onRecords,
-        onNavigate: onNavigate,
-        loadTablesList: loadTablesList,
-        loadTableData: loadTableData,
-        isColumnFormula: isColumnFormula
+        destroy: destroy,
+        onRecord: onRecord
     };
 })();

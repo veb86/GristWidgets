@@ -1,41 +1,37 @@
 /**
  * Главный модуль приложения Multipage Widget
  * 
- * Этот модуль отвечает за:
- * - Инициализацию приложения
- * - Навигацию между страницами
- * - Интеграцию с Grist API
- * - Управление состоянием виджета
+ * Роутер, навигация, интеграция с Grist API.
+ * Управляет жизненным циклом экранов.
  * 
  * @module AppModule
  */
 
-var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
+var AppModule = (function() {
     'use strict';
 
     // ========================================
     // КОНСТАНТЫ
     // ========================================
 
-    // Доступные страницы
-    var PAGES = {
-        HOME: 'home',
-        DETAILS: 'details',
-        SETTINGS: 'settings'
-    };
-
-    // Ключ для localStorage
     var STORAGE_KEY = 'multipage_widget_state';
+    var AVAILABLE_SCREENS = ['home', 'details', 'settings'];
 
     // ========================================
     // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
     // ========================================
 
     /**
-     * Текущая активная страница
-     * @type {string}
+     * Текущий активный экран
+     * @type {string|null}
      */
-    var currentPage = PAGES.HOME;
+    var currentScreen = null;
+
+    /**
+     * Предыдущий экран (для анимаций)
+     * @type {string|null}
+     */
+    var previousScreen = null;
 
     /**
      * Текущая запись из Grist
@@ -44,19 +40,37 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     var currentRecord = null;
 
     /**
+     * Список записей из Grist
+     * @type {Array}
+     */
+    var recordsList = [];
+
+    /**
      * Настройки виджета
      * @type {Object}
      */
     var widgetSettings = {
         autoSwitch: 'disabled',
-        defaultPage: PAGES.HOME
+        defaultPage: 'home'
     };
 
     /**
-     * История навигации для анимаций
-     * @type {Array}
+     * Загруженные HTML-шаблоны экранов (кэш)
+     * @type {Object.<string, string>}
      */
-    var navigationHistory = [];
+    var templatesCache = {};
+
+    /**
+     * Загруженные JS-модули экранов (кэш)
+     * @type {Object}
+     */
+    var modulesCache = {};
+
+    /**
+     * Текущий активный модуль экрана
+     * @type {Object|null}
+     */
+    var activeModule = null;
 
     // ========================================
     // ПУБЛИЧНЫЕ МЕТОДЫ
@@ -68,123 +82,113 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     function initializeApp() {
         console.log('[AppModule] Инициализация Multipage Widget...');
 
-        // Загружаем настройки из localStorage
+        // Инициализируем менеджер подписок
+        SubscriptionsManager.init();
+
+        // Загружаем настройки
         loadSettings();
 
         // Инициализируем Grist API
         initializeGrist();
 
-        // Инициализируем модули страниц
-        HomeModule.init();
-        DetailsModule.init();
-        SettingsModule.init(widgetSettings);
-
-        // Восстанавливаем состояние из URL или localStorage
+        // Восстанавливаем состояние
         restoreState();
 
-        // Навешиваем обработчики событий
+        // Настраиваем обработчики
         setupEventListeners();
 
         console.log('[AppModule] Инициализация завершена');
     }
 
     /**
-     * Навигация к указанной странице
-     * @param {string} pageId - Идентификатор страницы (home, details, settings)
-     * @param {Object} options - Дополнительные опции
+     * Навигация к указанному экрану
+     * @param {string} screenName - Имя экрана
+     * @param {Object} options - Опции
      */
-    function navigateTo(pageId, options) {
+    async function navigate(screenName, options) {
         options = options || {};
-        
-        if (!PAGES[pageId.toUpperCase()]) {
-            console.warn('[AppModule] Страница не найдена:', pageId);
+
+        // Валидация
+        if (AVAILABLE_SCREENS.indexOf(screenName) === -1) {
+            console.warn('[AppModule] Экран не найден:', screenName);
+            showStatusMessage('Экран "' + screenName + '" не найден', 'error');
             return;
         }
 
-        console.log('[AppModule] Навигация к странице:', pageId);
+        console.log('[AppModule] Навигация к экрану:', screenName);
 
-        var previousPage = currentPage;
-        currentPage = pageId;
+        previousScreen = currentScreen;
+        currentScreen = screenName;
 
-        // Скрываем все страницы
-        hideAllPages();
+        // Устанавливаем текущий экран в менеджере подписок (очистит предыдущий)
+        SubscriptionsManager.setCurrentScreen(screenName);
 
-        // Показываем целевую страницу с анимацией
-        var targetPage = document.getElementById('page-' + pageId);
-        if (targetPage) {
-            // Определяем направление анимации
-            var animationClass = getAnimationClass(previousPage, pageId);
-            targetPage.classList.add(animationClass);
-            targetPage.style.display = 'block';
+        // Обновляем UI навигации
+        updateNavigation(screenName);
 
-            // Удаляем класс анимации после завершения
-            setTimeout(function() {
-                targetPage.classList.remove(animationClass);
-            }, 400);
-        }
+        // Показываем индикатор загрузки
+        showLoading();
 
-        // Обновляем навигацию в UI
-        updateNavigation(pageId);
+        try {
+            // Загружаем HTML шаблон
+            var html = await loadTemplate(screenName);
 
-        // Обновляем URL hash
-        if (!options.silent) {
-            window.location.hash = 'view=' + pageId;
-        }
+            // Загружаем JS модуль
+            var module = await loadModule(screenName);
 
-        // Сохраняем в историю
-        navigationHistory.push(pageId);
-        if (navigationHistory.length > 10) {
-            navigationHistory.shift();
-        }
+            // Уничтожаем предыдущий модуль
+            if (activeModule && activeModule.destroy) {
+                activeModule.destroy();
+            }
 
-        // Сохраняем состояние
-        saveState();
+            // Рендерим контент
+            renderContent(html);
 
-        // Вызываем хуки модулей при переходе
-        onNavigateToPage(pageId);
-    }
+            // Инициализируем новый модуль
+            activeModule = module;
+            
+            // Передаём контекст с доступом к API
+            var context = createContext();
+            
+            if (activeModule && activeModule.init) {
+                activeModule.init(context);
+            }
 
-    /**
-     * Получить текущую страницу
-     * @returns {string}
-     */
-    function getCurrentPage() {
-        return currentPage;
-    }
+            // Обновляем URL hash
+            if (!options.silent) {
+                window.location.hash = 'view=' + screenName;
+            }
 
-    /**
-     * Обработать данные записи из Grist
-     * @param {Object} record - Данные записи
-     */
-    function handleRecord(record) {
-        currentRecord = record;
-        
-        console.log('[AppModule] Получена запись:', record);
+            // Сохраняем состояние
+            saveState();
 
-        // Обновляем индикатор записи
-        updateRecordIndicator(record);
+            // Скрываем индикатор загрузки
+            hideLoading();
 
-        // Передаем данные модулям страниц
-        HomeModule.onRecord(record);
-        DetailsModule.onRecord(record);
-        SettingsModule.onRecord(record);
+            // Анимация появления
+            triggerEnterAnimation();
 
-        // Автоматическое переключение по статусу (если включено)
-        if (widgetSettings.autoSwitch === 'enabled' && record) {
-            handleAutoSwitch(record);
+        } catch (error) {
+            console.error('[AppModule] Ошибка навигации:', error);
+            hideLoading();
+            showStatusMessage('Ошибка загрузки экрана: ' + error.message, 'error');
         }
     }
 
     /**
-     * Обработать список записей из Grist
-     * @param {Array} records - Массив записей
+     * Получить текущий экран
+     * @returns {string|null}
      */
-    function handleRecords(records) {
-        console.log('[AppModule] Получено записей:', records.length);
-        
-        HomeModule.onRecords(records);
-        DetailsModule.onRecords(records);
-        SettingsModule.onRecords(records);
+    function getCurrentScreen() {
+        return currentScreen;
+    }
+
+    /**
+     * Получить текущую запись
+     * @returns {Object|null}
+     */
+    function getCurrentRecord() {
+        return currentRecord;
     }
 
     /**
@@ -199,28 +203,28 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
 
     /**
      * Показать сообщение о статусе
-     * @param {string} message - Текст сообщения
-     * @param {string} type - Тип сообщения (success, error, warning, info)
+     * @param {string} message - Текст
+     * @param {string} type - Тип (success, error, warning, info)
      */
     function showStatusMessage(message, type) {
         type = type || 'info';
         var container = document.getElementById('status-message');
-        
+        if (!container) return;
+
         var alert = document.createElement('div');
         alert.className = 'alert alert-' + type + ' alert-dismissible fade show';
         alert.role = 'alert';
         alert.textContent = message;
-        
+
         var closeButton = document.createElement('button');
         closeButton.type = 'button';
         closeButton.className = 'btn-close';
         closeButton.setAttribute('data-bs-dismiss', 'alert');
         closeButton.setAttribute('aria-label', 'Close');
-        
+
         alert.appendChild(closeButton);
         container.appendChild(alert);
 
-        // Автоматическое удаление через 5 секунд
         setTimeout(function() {
             if (alert.parentNode) {
                 alert.parentNode.removeChild(alert);
@@ -235,10 +239,9 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     async function loadTables() {
         if (typeof grist !== 'undefined') {
             try {
-                var tables = await grist.docApi.fetchTable('_grist_Tables');
-                return tables;
+                return await grist.docApi.fetchTable('_grist_Tables');
             } catch (error) {
-                console.error('[AppModule] Ошибка загрузки списка таблиц:', error);
+                console.error('[AppModule] Ошибка загрузки таблиц:', error);
                 throw error;
             }
         }
@@ -253,8 +256,7 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     async function loadTableData(tableId) {
         if (typeof grist !== 'undefined') {
             try {
-                var tableData = await grist.docApi.fetchTable(tableId);
-                return tableData;
+                return await grist.docApi.fetchTable(tableId);
             } catch (error) {
                 console.error('[AppModule] Ошибка загрузки данных таблицы:', error);
                 throw error;
@@ -264,7 +266,7 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     }
 
     /**
-     * Загрузить метаданные столбцов таблицы
+     * Загрузить метаданные таблицы
      * @param {string} tableId - ID таблицы
      * @returns {Promise<Array>}
      */
@@ -273,7 +275,7 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
             try {
                 var columnMetadata = await grist.docApi.fetchTable('_grist_Tables_column');
                 var tableInfo = await grist.docApi.fetchTable('_grist_Tables');
-                
+
                 var tableRecord = null;
                 for (var i = 0; i < tableInfo.tableId.length; i++) {
                     if (tableInfo.tableId[i] === tableId) {
@@ -282,13 +284,11 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
                     }
                 }
 
-                if (!tableRecord) {
-                    return [];
-                }
+                if (!tableRecord) return [];
 
                 var tableIdInternal = tableRecord.id;
                 var filteredColumns = [];
-                
+
                 for (var j = 0; j < columnMetadata.id.length; j++) {
                     if (columnMetadata.parentId[j] === tableIdInternal) {
                         filteredColumns.push({
@@ -322,10 +322,9 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     async function updateRecord(tableId, rowId, updateObj) {
         if (typeof grist !== 'undefined') {
             try {
-                var result = await grist.docApi.applyUserActions([
+                return await grist.docApi.applyUserActions([
                     ['UpdateRecord', tableId, rowId, updateObj]
                 ]);
-                return result;
             } catch (error) {
                 console.error('[AppModule] Ошибка обновления записи:', error);
                 throw error;
@@ -342,10 +341,9 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     async function deleteRecord(tableId, rowId) {
         if (typeof grist !== 'undefined') {
             try {
-                var result = await grist.docApi.applyUserActions([
+                return await grist.docApi.applyUserActions([
                     ['RemoveRecord', tableId, rowId]
                 ]);
-                return result;
             } catch (error) {
                 console.error('[AppModule] Ошибка удаления записи:', error);
                 throw error;
@@ -366,10 +364,9 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
                 var numRecords = columnValues[firstKey] ? columnValues[firstKey].length : 0;
                 var rowIds = Array(numRecords).fill(null);
 
-                var result = await grist.docApi.applyUserActions([
+                return await grist.docApi.applyUserActions([
                     ['BulkAddRecord', tableId, rowIds, columnValues]
                 ]);
-                return result;
             } catch (error) {
                 console.error('[AppModule] Ошибка добавления записи:', error);
                 throw error;
@@ -382,93 +379,108 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
     // ========================================
 
     /**
+     * Создать контекст для модуля экрана
+     * @returns {Object}
+     */
+    function createContext() {
+        return {
+            // Навигация
+            navigate: navigate,
+            getCurrentScreen: getCurrentScreen,
+
+            // Данные Grist
+            currentRecord: currentRecord,
+            recordsList: recordsList,
+
+            // API Grist
+            grist: typeof grist !== 'undefined' ? grist : null,
+            subscribe: SubscriptionsManager.subscribe.bind(SubscriptionsManager),
+
+            // Утилиты
+            showStatusMessage: showStatusMessage,
+
+            // API таблиц
+            loadTables: loadTables,
+            loadTableData: loadTableData,
+            loadTableMetadata: loadTableMetadata,
+            updateRecord: updateRecord,
+            deleteRecord: deleteRecord,
+            addRecord: addRecord,
+
+            // Настройки
+            getSettings: function() { return Object.assign({}, widgetSettings); },
+            updateSettings: updateSettings
+        };
+    }
+
+    /**
      * Инициализация Grist API
      */
     function initializeGrist() {
         if (typeof grist !== 'undefined') {
-            // Подписка на изменения текущей записи
-            grist.onRecord(function(record) {
-                handleRecord(record);
+            // ВАЖНО: Сначала вызываем grist.ready() перед любыми подписками
+            // Это обязательное требование Grist API
+            // Примечание: не передаём callback-функции в ready(), т.к. они не клонируются
+            grist.ready({
+                requiredAccess: 'full'
             });
+
+            console.log('[AppModule] grist.ready() вызван, подписываемся на события...');
+
+            // Подписка на изменения текущей записи (глобальная)
+            var unsubscribe = grist.onRecord(function(record) {
+                handleRecordChange(record);
+            });
+
+            // Регистрируем подписку для глобального контекста
+            SubscriptionsManager.subscribe(unsubscribe, 'global');
 
             // Подписка на изменения списка записей
-            grist.onRecords(function(records) {
-                handleRecords(records);
+            var unsubscribeRecords = grist.onRecords(function(records) {
+                handleRecordsChange(records);
             });
 
-            // Подписка на изменения опций виджета
-            grist.onOptions(function(options) {
-                console.log('[AppModule] Изменены опции виджета:', options);
-            });
+            SubscriptionsManager.subscribe(unsubscribeRecords, 'global');
 
             console.log('[AppModule] Grist API инициализирован');
         } else {
-            console.warn('[AppModule] Grist API не найден. Запуск в режиме разработки.');
-            // Режим разработки - эмуляция данных
+            console.warn('[AppModule] Grist API не найден. Режим разработки.');
             emulateDevelopmentMode();
         }
     }
 
     /**
-     * Скрыть все страницы
+     * Обработать изменение записи
+     * @param {Object} record - Данные записи
      */
-    function hideAllPages() {
-        var pages = document.querySelectorAll('.page-content');
-        pages.forEach(function(page) {
-            page.style.display = 'none';
-            page.classList.remove('page-enter', 'page-enter-from-right', 'page-enter-from-left');
-        });
-    }
+    function handleRecordChange(record) {
+        currentRecord = record;
+        console.log('[AppModule] Получена запись:', record);
 
-    /**
-     * Получить класс анимации на основе направления перехода
-     * @param {string} fromPage - Предыдущая страница
-     * @param {string} toPage - Целевая страница
-     * @returns {string}
-     */
-    function getAnimationClass(fromPage, toPage) {
-        var pageOrder = [PAGES.HOME, PAGES.DETAILS, PAGES.SETTINGS];
-        var fromIndex = pageOrder.indexOf(fromPage);
-        var toIndex = pageOrder.indexOf(toPage);
+        // Обновляем индикатор
+        updateRecordIndicator(record);
 
-        if (toIndex > fromIndex) {
-            return 'page-enter-from-right';
-        } else if (toIndex < fromIndex) {
-            return 'page-enter-from-left';
-        } else {
-            return 'page-enter';
+        // Уведомляем активный модуль
+        if (activeModule && activeModule.onRecord) {
+            activeModule.onRecord(record);
+        }
+
+        // Автопереключение по статусу
+        if (widgetSettings.autoSwitch === 'enabled' && record) {
+            handleAutoSwitch(record);
         }
     }
 
     /**
-     * Обновить UI навигации
-     * @param {string} pageId - Текущая страница
+     * Обработать изменение списка записей
+     * @param {Array} records - Массив записей
      */
-    function updateNavigation(pageId) {
-        var navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(function(link) {
-            link.classList.remove('active');
-            if (link.getAttribute('data-page') === pageId) {
-                link.classList.add('active');
-            }
-        });
-    }
+    function handleRecordsChange(records) {
+        recordsList = records;
+        console.log('[AppModule] Получено записей:', records.length);
 
-    /**
-     * Обновить индикатор текущей записи
-     * @param {Object} record - Данные записи
-     */
-    function updateRecordIndicator(record) {
-        var indicator = document.getElementById('record-indicator');
-        
-        if (record && record.id) {
-            indicator.textContent = 'Запись #' + record.id;
-            indicator.classList.remove('bg-secondary');
-            indicator.classList.add('bg-success', 'active');
-        } else {
-            indicator.textContent = 'Нет записи';
-            indicator.classList.remove('bg-success', 'active');
-            indicator.classList.add('bg-secondary');
+        if (activeModule && activeModule.onRecords) {
+            activeModule.onRecords(records);
         }
     }
 
@@ -477,95 +489,205 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
      * @param {Object} record - Данные записи
      */
     function handleAutoSwitch(record) {
-        // Проверяем поле Status
         var status = record.Status || record.status;
-        
+
         if (status === 'Done' || status === 'done') {
-            console.log('[AppModule] AutoSwitch: Status = Done, переход к деталям');
-            navigateTo(PAGES.DETAILS);
+            console.log('[AppModule] AutoSwitch: Status = Done');
+            navigate('details');
         } else if (status === 'Draft' || status === 'draft') {
-            console.log('[AppModule] AutoSwitch: Status = Draft, переход к главной');
-            navigateTo(PAGES.HOME);
+            console.log('[AppModule] AutoSwitch: Status = Draft');
+            navigate('home');
         }
     }
 
     /**
-     * Вызвать хуки модулей при переходе на страницу
-     * @param {string} pageId - Идентификатор страницы
+     * Загрузить HTML шаблон экрана
+     * @param {string} screenName - Имя экрана
+     * @returns {Promise<string>}
      */
-    function onNavigateToPage(pageId) {
-        switch (pageId) {
-            case PAGES.HOME:
-                HomeModule.onNavigate();
-                break;
-            case PAGES.DETAILS:
-                DetailsModule.onNavigate();
-                break;
-            case PAGES.SETTINGS:
-                SettingsModule.onNavigate();
-                break;
+    async function loadTemplate(screenName) {
+        // Проверяем кэш
+        if (templatesCache[screenName]) {
+            console.log('[AppModule] Шаблон загружен из кэша:', screenName);
+            return templatesCache[screenName];
         }
+
+        // Загружаем через fetch
+        var response = await fetch('pages/' + screenName + '.html');
+        
+        if (!response.ok) {
+            throw new Error('Не удалось загрузить шаблон: ' + screenName);
+        }
+
+        var html = await response.text();
+        templatesCache[screenName] = html;
+        console.log('[AppModule] Шаблон загружен:', screenName);
+        
+        return html;
+    }
+
+    /**
+     * Загрузить JS модуль экрана
+     * @param {string} screenName - Имя экрана
+     * @returns {Promise<Object>}
+     */
+    async function loadModule(screenName) {
+        // Проверяем кэш
+        if (modulesCache[screenName]) {
+            console.log('[AppModule] Модуль загружен из кэша:', screenName);
+            return modulesCache[screenName];
+        }
+
+        // Динамическая загрузка скрипта
+        return new Promise(function(resolve, reject) {
+            var script = document.createElement('script');
+            script.src = 'pages/' + screenName + '.js';
+            script.onload = function() {
+                // Модуль должен экспортировать себя в глобальную область
+                var moduleName = screenName.charAt(0).toUpperCase() + screenName.slice(1) + 'Module';
+                var module = window[moduleName];
+                
+                if (module) {
+                    modulesCache[screenName] = module;
+                    console.log('[AppModule] Модуль загружен:', screenName);
+                    resolve(module);
+                } else {
+                    reject(new Error('Модуль ' + moduleName + ' не найден'));
+                }
+            };
+            script.onerror = function() {
+                reject(new Error('Не удалось загрузить модуль: ' + screenName));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    /**
+     * Отрендерить контент в контейнере
+     * @param {string} html - HTML разметка
+     */
+    function renderContent(html) {
+        var appContainer = document.getElementById('app');
+        if (!appContainer) {
+            console.error('[AppModule] Контейнер #app не найден');
+            return;
+        }
+
+        // Плавное скрытие старого контента
+        appContainer.style.opacity = '0';
+        appContainer.style.transition = 'opacity 0.2s ease';
+
+        setTimeout(function() {
+            appContainer.innerHTML = html;
+            
+            // Плавное появление нового контента
+            appContainer.style.opacity = '1';
+        }, 200);
+    }
+
+    /**
+     * Показать индикатор загрузки
+     */
+    function showLoading() {
+        var appContainer = document.getElementById('app');
+        if (!appContainer) return;
+
+        appContainer.innerHTML = '<div class="loading-container">' +
+            '<div class="spinner-border text-primary" role="status">' +
+            '<span class="visually-hidden">Загрузка...</span>' +
+            '</div>' +
+            '<p class="mt-2">Загрузка экрана...</p>' +
+            '</div>';
+    }
+
+    /**
+     * Скрыть индикатор загрузки
+     */
+    function hideLoading() {
+        // Индикатор будет заменён при рендере
+    }
+
+    /**
+     * Обновить UI навигации
+     * @param {string} screenName - Текущий экран
+     */
+    function updateNavigation(screenName) {
+        var navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(function(link) {
+            link.classList.remove('active');
+            if (link.getAttribute('data-screen') === screenName) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    /**
+     * Обновить индикатор записи
+     * @param {Object} record - Данные записи
+     */
+    function updateRecordIndicator(record) {
+        var indicator = document.getElementById('record-indicator');
+        if (!indicator) return;
+
+        if (record && record.id) {
+            indicator.textContent = 'Запись #' + record.id;
+            indicator.classList.remove('bg-secondary');
+            indicator.classList.add('bg-success');
+        } else {
+            indicator.textContent = 'Нет записи';
+            indicator.classList.remove('bg-success');
+            indicator.classList.add('bg-secondary');
+        }
+    }
+
+    /**
+     * Триггер анимации появления
+     */
+    function triggerEnterAnimation() {
+        var appContainer = document.getElementById('app');
+        if (!appContainer) return;
+
+        appContainer.classList.add('screen-enter');
+        setTimeout(function() {
+            appContainer.classList.remove('screen-enter');
+        }, 400);
     }
 
     /**
      * Настроить обработчики событий
      */
     function setupEventListeners() {
-        // Обработка кликов по навигации
+        // Клики по навигации
         var navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(function(link) {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                var pageId = this.getAttribute('data-page');
-                if (pageId) {
-                    navigateTo(pageId);
+                var screenName = this.getAttribute('data-screen');
+                if (screenName) {
+                    navigate(screenName);
                 }
             });
         });
 
-        // Обработка изменения hash в URL
+        // Изменение hash в URL
         window.addEventListener('hashchange', function() {
             var hash = window.location.hash;
             var match = hash.match(/view=(\w+)/);
             if (match && match[1]) {
-                var pageId = match[1];
-                if (PAGES[pageId.toUpperCase()]) {
-                    navigateTo(pageId, { silent: true });
+                var screenName = match[1];
+                if (AVAILABLE_SCREENS.indexOf(screenName) !== -1) {
+                    navigate(screenName, { silent: true });
                 }
             }
         });
-
-        // Обработка отправки формы настроек
-        var settingsForm = document.getElementById('settings-form');
-        if (settingsForm) {
-            settingsForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                saveSettingsFromForm();
-            });
-        }
     }
 
     /**
-     * Сохранить настройки из формы
-     */
-    function saveSettingsFromForm() {
-        var autoSwitch = document.getElementById('auto-switch').value;
-        var defaultPage = document.getElementById('default-page').value;
-
-        updateSettings({
-            autoSwitch: autoSwitch,
-            defaultPage: defaultPage
-        });
-
-        showStatusMessage('Настройки сохранены', 'success');
-    }
-
-    /**
-     * Сохранить состояние виджета в localStorage
+     * Сохранить состояние в localStorage
      */
     function saveState() {
         var state = {
-            currentPage: currentPage,
+            currentScreen: currentScreen,
             timestamp: Date.now()
         };
         try {
@@ -579,19 +701,21 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
      * Восстановить состояние из localStorage или URL
      */
     function restoreState() {
-        // Сначала проверяем URL hash
+        var screenToLoad = null;
+
+        // Проверяем URL hash
         var hash = window.location.hash;
         var match = hash.match(/view=(\w+)/);
-        if (match && match[1] && PAGES[match[1].toUpperCase()]) {
-            currentPage = match[1];
+        if (match && match[1] && AVAILABLE_SCREENS.indexOf(match[1]) !== -1) {
+            screenToLoad = match[1];
         } else {
-            // Если нет hash, пробуем localStorage
+            // Проверяем localStorage
             try {
                 var stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     var state = JSON.parse(stored);
-                    if (state.currentPage && PAGES[state.currentPage.toUpperCase()]) {
-                        currentPage = state.currentPage;
+                    if (state.currentScreen && AVAILABLE_SCREENS.indexOf(state.currentScreen) !== -1) {
+                        screenToLoad = state.currentScreen;
                     }
                 }
             } catch (e) {
@@ -599,13 +723,13 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
             }
         }
 
-        // Если настройки указывают на другую страницу по умолчанию
-        if (currentPage === PAGES.HOME && widgetSettings.defaultPage !== PAGES.HOME) {
-            currentPage = widgetSettings.defaultPage;
+        // Если нет сохранённого состояния, используем настройки
+        if (!screenToLoad) {
+            screenToLoad = widgetSettings.defaultPage || 'home';
         }
 
-        // Переходим на восстановленную страницу
-        navigateTo(currentPage, { silent: true });
+        // Загружаем экран
+        navigate(screenToLoad, { silent: true });
     }
 
     /**
@@ -631,28 +755,16 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
         } catch (e) {
             console.warn('[AppModule] Не удалось загрузить настройки:', e);
         }
-
-        // Обновляем форму настроек
-        var autoSwitchSelect = document.getElementById('auto-switch');
-        var defaultPageSelect = document.getElementById('default-page');
-        
-        if (autoSwitchSelect) {
-            autoSwitchSelect.value = widgetSettings.autoSwitch || 'disabled';
-        }
-        if (defaultPageSelect) {
-            defaultPageSelect.value = widgetSettings.defaultPage || PAGES.HOME;
-        }
     }
 
     /**
-     * Эмуляция режима разработки (когда Grist API недоступен)
+     * Эмуляция режима разработки
      */
     function emulateDevelopmentMode() {
         console.log('[AppModule] Режим разработки: эмуляция данных Grist');
-        
-        // Эмуляция записи через 1 секунду
+
         setTimeout(function() {
-            handleRecord({
+            handleRecordChange({
                 id: 1,
                 Name: 'Тестовая запись',
                 Status: 'Draft',
@@ -667,10 +779,9 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
 
     return {
         initializeApp: initializeApp,
-        navigateTo: navigateTo,
-        getCurrentPage: getCurrentPage,
-        handleRecord: handleRecord,
-        handleRecords: handleRecords,
+        navigate: navigate,
+        getCurrentScreen: getCurrentScreen,
+        getCurrentRecord: getCurrentRecord,
         updateSettings: updateSettings,
         showStatusMessage: showStatusMessage,
         loadTables: loadTables,
@@ -680,9 +791,9 @@ var AppModule = (function(HomeModule, DetailsModule, SettingsModule) {
         deleteRecord: deleteRecord,
         addRecord: addRecord
     };
-})(HomeModule, DetailsModule, SettingsModule);
+})();
 
-// Инициализировать приложение при загрузке DOM
+// Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', function() {
     AppModule.initializeApp();
 });

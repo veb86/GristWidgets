@@ -1,0 +1,61 @@
+<!--
+    HTML-фрагмент страницы "Главная"
+    Не содержит <html>, <head>, <body>, <script>
+-->
+
+<div class="screen-home">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">🏠 Главная страница</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                Добро пожаловать в многостраничный виджет Grist!
+            </p>
+
+            <!-- Блок с информацией о текущей записи -->
+            <div id="home-record-info" class="alert alert-info" style="display: none;">
+                <strong>📌 Текущая запись:</strong>
+                <pre id="home-record-data"></pre>
+            </div>
+
+            <!-- Блок со статистикой -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 id="stat-total-records">0</h3>
+                            <p class="text-muted mb-0">Всего записей</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 id="stat-current-screen">-</h3>
+                            <p class="text-muted mb-0">Текущий экран</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 id="stat-status">-</h3>
+                            <p class="text-muted mb-0">Статус записи</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки навигации -->
+            <div class="mt-4">
+                <button class="btn btn-primary" onclick="navigate('details')">
+                    Перейти к деталям →
+                </button>
+                <button class="btn btn-outline-secondary ms-2" onclick="navigate('settings')">
+                    ⚙️ Настройки
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

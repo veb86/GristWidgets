@@ -1,0 +1,290 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+    color: #1f2937;
+}
+
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 16px;
+}
+
+.widget-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.selected-info {
+    font-size: 13px;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.selected-info.has-value {
+    color: #059669;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+#message-container {
+    margin-bottom: 16px;
+}
+
+.message {
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.message-info {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.message-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.message-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.tree-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+}
+
+.tree-root {
+    padding: 8px 0;
+}
+
+/* Узел дерева */
+.tree-node {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tree-node-content {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-left: 3px solid transparent;
+}
+
+.tree-node-content:hover {
+    background: #f3f4f6;
+}
+
+.tree-node-content.selected {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+}
+
+.tree-node-content.selected .tree-node-name {
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+/* Кнопка сворачивания/разворачивания */
+.tree-toggle {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.tree-toggle:hover {
+    color: #3b82f6;
+}
+
+.tree-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.tree-toggle.leaf {
+    visibility: hidden;
+}
+
+/* Иконка узла */
+.tree-node-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    color: #6b7280;
+    font-size: 16px;
+}
+
+.tree-node-icon.folder {
+    color: #f59e0b;
+}
+
+.tree-node-icon.file {
+    color: #10b981;
+}
+
+/* Текст узла */
+.tree-node-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tree-node-code {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.tree-node-name {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Счётчик дочерних элементов */
+.tree-node-count {
+    font-size: 11px;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+/* Дочерние узлы */
+.tree-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-left: 28px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.tree-children.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+}
+
+/* Состояния */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #6b7280;
+}
+
+.loading::before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    margin-right: 12px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    body {
+        padding: 12px;
+    }
+
+    .container {
+        padding: 12px;
+    }
+
+    .widget-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .tree-children {
+        padding-left: 20px;
+    }
+
+    .tree-node-content {
+        padding: 8px 12px;
+    }
+}
+
+/* Скроллбары */
+.tree-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 4px;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}

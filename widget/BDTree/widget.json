@@ -1,0 +1,15 @@
+{
+  "name": "BDTree",
+  "description": "Виджет выбора группы устройств в виде дерева",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "grist": {
+    "name": "BDTree",
+    "url": "index.html",
+    "widgetId": "bdtree",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full"
+  }
+}

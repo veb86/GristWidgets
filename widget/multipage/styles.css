@@ -1,11 +1,5 @@
 /**
- * Стили для многостраничного виджета Grist
- * 
- * Включает:
- * - Базовые стили для контейнеров
- * - Анимации переключения страниц (fade / slide)
- * - Стили для навигации
- * - Адаптивные стили
+ * Общие стили для Multipage Widget
  */
 
 /* ========================================
@@ -19,7 +13,7 @@ body {
     padding: 0;
 }
 
-.container-fluid {
+.widget-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 15px;
@@ -56,130 +50,23 @@ body {
 }
 
 /* ========================================
-   КОНТЕЙНЕР СТРАНИЦ
+   КОНТЕЙНЕР ПРИЛОЖЕНИЯ
    ======================================== */
 
-#pages-container {
-    position: relative;
+.app-container {
     min-height: 400px;
-}
-
-.page-content {
-    animation: fadeIn 0.4s ease-in-out;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    padding: 20px;
+    transition: opacity 0.2s ease;
 }
 
 /* ========================================
-   СЕЛЕКТОР ТАБЛИЦ
+   АНИМАЦИИ ЭКРАНОВ
    ======================================== */
 
-.table-selector {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.table-selector label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 8px;
-}
-
-.table-selector .form-select {
-    border-radius: 6px;
-    border: 1px solid #ced4da;
-    padding: 10px 14px;
-    transition: all 0.3s ease;
-}
-
-.table-selector .form-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.table-selector .form-text {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 8px;
-}
-
-/* ========================================
-   КОНТЕЙНЕР ТАБЛИЦЫ
-   ======================================== */
-
-#details-table-container,
-#table-container {
-    margin-top: 20px;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.tabulator {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    overflow: hidden;
-    font-size: 0.9rem;
-}
-
-.tabulator .tabulator-header {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
-}
-
-.tabulator .tabulator-row {
-    border-bottom: 1px solid #dee2e6;
-}
-
-.tabulator .tabulator-row:hover {
-    background-color: #f8f9fa;
-}
-
-.tabulator .tabulator-cell {
-    padding: 10px 8px;
-    border-right: 1px solid #dee2e6;
-}
-
-/* Формульные колонки */
-.formula-column-header {
-    background-color: #e3f2fd !important;
-    color: #0d47a1 !important;
-    font-weight: bold;
-}
-
-.formula-column-cell {
-    background-color: #e3f2fd !important;
-    color: #0d47a1 !important;
-    font-style: italic;
-}
-
-/* Пагинация */
-.tabulator .tabulator-footer {
-    background-color: #f8f9fa;
-    border-top: 2px solid #dee2e6;
-}
-
-.tabulator .tabulator-paginator button {
-    border-radius: 4px;
-    margin: 0 2px;
-}
-
-.tabulator .tabulator-paginator button:hover {
-    background-color: #667eea;
-    color: white;
-}
-
-/* ========================================
-   АНИМАЦИИ ПЕРЕКЛЮЧЕНИЯ СТРАНИЦ
-   ======================================== */
-
-/* Fade анимация */
-@keyframes fadeIn {
+@keyframes screenFadeIn {
     from {
         opacity: 0;
         transform: translateY(10px);
@@ -190,18 +77,52 @@ body {
     }
 }
 
-@keyframes fadeOut {
-    from {
+.screen-enter {
+    animation: screenFadeIn 0.4s ease-in-out;
+}
+
+/* ========================================
+   ИНДИКАТОРЫ
+   ======================================== */
+
+#record-indicator {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    transition: all 0.3s ease;
+}
+
+#record-indicator.bg-success {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
         opacity: 1;
-        transform: translateY(0);
     }
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
+    50% {
+        opacity: 0.7;
     }
 }
 
-/* Slide анимация */
+/* ========================================
+   СТАТУСНЫЕ СООБЩЕНИЯ
+   ======================================== */
+
+.status-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+.status-container .alert {
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-in-out;
+}
+
 @keyframes slideInRight {
     from {
         opacity: 0;
@@ -213,32 +134,17 @@ body {
     }
 }
 
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+/* ========================================
+   ПРЕЛОАДЕР
+   ======================================== */
 
-/* Классы для анимаций при переключении */
-.page-enter {
-    animation: fadeIn 0.4s ease-in-out;
-}
-
-.page-enter-from-right {
-    animation: slideInRight 0.4s ease-in-out;
-}
-
-.page-enter-from-left {
-    animation: slideInLeft 0.4s ease-in-out;
-}
-
-.page-exit {
-    animation: fadeOut 0.3s ease-in-out;
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #6c757d;
 }
 
 /* ========================================
@@ -269,54 +175,6 @@ body {
     font-size: 1.1rem;
 }
 
-.card-body {
-    padding: 20px;
-}
-
-/* ========================================
-   ИНДИКАТОРЫ И СТАТУСЫ
-   ======================================== */
-
-#record-indicator {
-    font-size: 0.85rem;
-    padding: 6px 12px;
-    transition: all 0.3s ease;
-}
-
-#record-indicator.active {
-    background-color: #198754 !important;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-}
-
-/* ========================================
-   ALERTS
-   ======================================== */
-
-.alert {
-    border-radius: 6px;
-    border: none;
-    font-size: 0.95rem;
-}
-
-.alert pre {
-    background: rgba(255, 255, 255, 0.5);
-    padding: 10px;
-    border-radius: 4px;
-    margin-top: 10px;
-    max-height: 300px;
-    overflow-y: auto;
-    font-size: 0.85rem;
-}
-
 /* ========================================
    КНОПКИ
    ======================================== */
@@ -331,10 +189,6 @@ body {
 .btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.btn:active {
-    transform: translateY(0);
 }
 
 .btn-primary {
@@ -386,40 +240,114 @@ body {
 }
 
 /* ========================================
-   СТАТУС СООБЩЕНИЯ
+   СЕЛЕКТОР ТАБЛИЦ
    ======================================== */
 
-#status-message {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1050;
-    min-width: 250px;
-    max-width: 400px;
-}
-
-#status-message .alert {
-    margin-bottom: 10px;
-    animation: slideInRight 0.3s ease-in-out;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.table-selector {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
 }
 
 /* ========================================
-   ПРЕЛОАДЕР
+   ТАБЛИЦЫ (TABULATOR)
    ======================================== */
 
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 0.2em;
+.table-container {
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.loading-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    color: #6c757d;
+.tabulator {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+.tabulator .tabulator-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+.tabulator .tabulator-row {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tabulator .tabulator-row:hover {
+    background-color: #f8f9fa;
+}
+
+.tabulator .tabulator-cell {
+    padding: 10px 8px;
+    border-right: 1px solid #dee2e6;
+}
+
+/* Формульные колонки */
+.formula-column-header {
+    background-color: #e3f2fd !important;
+    color: #0d47a1 !important;
+    font-weight: bold;
+}
+
+.formula-column-cell {
+    background-color: #e3f2fd !important;
+    color: #0d47a1 !important;
+    font-style: italic;
+}
+
+/* Пагинация */
+.tabulator .tabulator-footer {
+    background-color: #f8f9fa;
+    border-top: 2px solid #dee2e6;
+}
+
+/* ========================================
+   ALERTS
+   ======================================== */
+
+.alert {
+    border-radius: 6px;
+    border: none;
+    font-size: 0.95rem;
+}
+
+.alert pre {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+}
+
+/* ========================================
+   СПИСКИ
+   ======================================== */
+
+.screen-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.screen-list li {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.screen-list li:hover {
+    background-color: #f8f9fa;
+}
+
+.screen-list li:last-child {
+    border-bottom: none;
 }
 
 /* ========================================
@@ -427,7 +355,7 @@ body {
    ======================================== */
 
 @media (max-width: 768px) {
-    .container-fluid {
+    .widget-container {
         padding: 10px;
     }
 
@@ -435,15 +363,12 @@ body {
         font-size: 1rem;
     }
 
-    .card-header h5 {
-        font-size: 1rem;
-    }
-
-    .page-content {
+    .app-container {
+        padding: 15px;
         min-height: 300px;
     }
 
-    #status-message {
+    .status-container {
         left: 20px;
         right: 20px;
         min-width: auto;
@@ -451,7 +376,7 @@ body {
 }
 
 /* ========================================
-   ТЁМНАЯ ТЕМА (опционально)
+   ТЁМНАЯ ТЕМА
    ======================================== */
 
 @media (prefers-color-scheme: dark) {
@@ -464,9 +389,12 @@ body {
         background-color: #16213e !important;
     }
 
+    .app-container {
+        background-color: #0f3460;
+    }
+
     .card {
         background-color: #0f3460;
-        color: #eee;
     }
 
     .form-select,
@@ -474,6 +402,25 @@ body {
         background-color: #1a1a2e;
         color: #eee;
         border-color: #0f3460;
+    }
+
+    .tabulator {
+        background-color: #0f3460;
+        color: #eee;
+    }
+
+    .tabulator .tabulator-header {
+        background-color: #16213e;
+        color: #eee;
+    }
+
+    .tabulator .tabulator-row {
+        background-color: #0f3460;
+        color: #eee;
+    }
+
+    .tabulator .tabulator-row:hover {
+        background-color: #16213e;
     }
 
     pre {

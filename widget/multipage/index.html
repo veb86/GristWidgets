@@ -4,171 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multipage Widget для Grist</title>
+    
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    
+    <!-- Tabulator CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css">
+    
+    <!-- Общие стили виджета -->
     <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <div class="container-fluid">
+    <div class="widget-container">
         <!-- Навигационная панель -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
             <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1">Multipage Widget</span>
+                <span class="navbar-brand mb-0 h1">🧩 Multipage Widget</span>
+                
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+                
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav" id="main-nav">
+                    <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="#view=home" data-page="home">Главная</a>
+                            <a class="nav-link" href="#view=home" data-screen="home">
+                                🏠 Главная
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#view=details" data-page="details">Детали</a>
+                            <a class="nav-link" href="#view=details" data-screen="details">
+                                📋 Детали
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#view=settings" data-page="settings">Настройки</a>
+                            <a class="nav-link" href="#view=settings" data-screen="settings">
+                                ⚙️ Настройки
+                            </a>
                         </li>
                     </ul>
-                </div>
-                <!-- Индикатор текущей записи Grist -->
-                <div class="d-flex align-items-center">
-                    <span id="record-indicator" class="badge bg-secondary">Нет записи</span>
+                    
+                    <!-- Индикатор текущей записи Grist -->
+                    <div class="d-flex align-items-center">
+                        <span id="record-indicator" class="badge bg-secondary">Нет записи</span>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Контейнер для страниц -->
-        <main id="pages-container">
-            <!-- Страница: Главная -->
-            <section id="page-home" class="page-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">🏠 Главная страница</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="home-content">
-                            <p class="text-muted">Добро пожаловать в многостраничный виджет Grist!</p>
-                            <div id="home-record-info" class="alert alert-info" style="display: none;">
-                                <strong>Текущая запись:</strong>
-                                <pre id="home-record-data"></pre>
-                            </div>
-                            <div class="mt-3">
-                                <button class="btn btn-primary" onclick="AppModule.navigateTo('details')">
-                                    Перейти к деталям →
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Основной контейнер приложения (контент экранов) -->
+        <main id="app" class="app-container">
+            <!-- Сюда динамически загружается контент экранов -->
+            <div class="loading-container">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
                 </div>
-            </section>
-
-            <!-- Страница: Детали -->
-            <section id="page-details" class="page-content" style="display: none;">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">📋 Детали</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="details-content">
-                            <!-- Блок с информацией о текущей записи Grist -->
-                            <div id="details-record-section" style="display: none;">
-                                <div class="alert alert-warning">
-                                    <strong>Текущая запись Grist:</strong>
-                                    <pre id="details-record-data"></pre>
-                                </div>
-                            </div>
-
-                            <!-- Селектор таблиц -->
-                            <div class="table-selector">
-                                <label for="details-table-select" class="form-label"><strong>Выберите таблицу:</strong></label>
-                                <select id="details-table-select" class="form-select">
-                                    <option value="">-- Загрузка таблиц... --</option>
-                                </select>
-                                <div class="form-text">Выберите таблицу для просмотра данных</div>
-                            </div>
-
-                            <!-- Кнопка добавления строки -->
-                            <div class="mb-3 mt-3">
-                                <button id="details-add-row-btn" class="btn btn-primary">Добавить строку</button>
-                            </div>
-
-                            <!-- Контейнер для таблицы -->
-                            <div id="details-table-container"></div>
-
-                            <!-- Навигация -->
-                            <div class="mt-3">
-                                <button class="btn btn-secondary" onclick="AppModule.navigateTo('home')">
-                                    ← На главную
-                                </button>
-                                <button class="btn btn-primary" onclick="AppModule.navigateTo('settings')">
-                                    В настройки →
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Страница: Настройки -->
-            <section id="page-settings" class="page-content" style="display: none;">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">⚙️ Настройки</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="settings-content">
-                            <form id="settings-form">
-                                <div class="mb-3">
-                                    <label for="auto-switch" class="form-label">
-                                        Автоматическое переключение по статусу
-                                    </label>
-                                    <select class="form-select" id="auto-switch">
-                                        <option value="disabled">Отключено</option>
-                                        <option value="enabled">Включено</option>
-                                    </select>
-                                    <div class="form-text">
-                                        При выборе "Включено" виджет будет автоматически переключаться 
-                                        на страницу "Детали" при Status = "Done"
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="default-page" class="form-label">Страница по умолчанию</label>
-                                    <select class="form-select" id="default-page">
-                                        <option value="home">Главная</option>
-                                        <option value="details">Детали</option>
-                                        <option value="settings">Настройки</option>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-success">Сохранить настройки</button>
-                            </form>
-                            <div class="mt-3">
-                                <button class="btn btn-secondary" onclick="AppModule.navigateTo('home')">
-                                    ← На главную
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+                <p class="mt-2">Инициализация виджета...</p>
+            </div>
         </main>
 
-        <!-- Статус сообщения -->
-        <div id="status-message" class="mt-3"></div>
+        <!-- Контейнер для статусных сообщений -->
+        <div id="status-message" class="status-container"></div>
     </div>
 
-    <!-- Load Grist widget API -->
-    <script src="../edittable/grist-plugin-api.js"></script>
+    <!-- Grist Widget API (официальный CDN) -->
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Tabulator для таблиц -->
-    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css">
+
+    <!-- Tabulator JS -->
     <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
 
-    <!-- Application modules -->
-    <script src="./pages/home.js"></script>
-    <script src="./pages/details.js"></script>
-    <script src="./pages/settings.js"></script>
+    <!-- Менеджер подписок -->
+    <script src="./subscriptions.js"></script>
+
+    <!-- Главный модуль приложения -->
     <script src="./app.js"></script>
 </body>
 </html>

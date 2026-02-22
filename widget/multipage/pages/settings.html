@@ -1,0 +1,86 @@
+<!--
+    HTML-фрагмент страницы "Настройки"
+    Не содержит <html>, <head>, <body>, <script>
+-->
+
+<div class="screen-settings">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">⚙️ Настройки виджета</h5>
+        </div>
+        <div class="card-body">
+            <form id="settings-form">
+                <!-- Автоматическое переключение -->
+                <div class="mb-4">
+                    <label for="auto-switch" class="form-label">
+                        Автоматическое переключение по статусу
+                    </label>
+                    <select class="form-select" id="auto-switch">
+                        <option value="disabled">Отключено</option>
+                        <option value="enabled">Включено</option>
+                    </select>
+                    <div class="form-text">
+                        При выборе «Включено» виджет будет автоматически переключаться
+                        на страницу «Детали» при <code>Status = "Done"</code>
+                        и на «Главную» при <code>Status = "Draft"</code>.
+                    </div>
+                </div>
+
+                <!-- Страница по умолчанию -->
+                <div class="mb-4">
+                    <label for="default-page" class="form-label">
+                        Страница по умолчанию
+                    </label>
+                    <select class="form-select" id="default-page">
+                        <option value="home">Главная</option>
+                        <option value="details">Детали</option>
+                        <option value="settings">Настройки</option>
+                    </select>
+                    <div class="form-text">
+                        Эта страница будет открываться при загрузке виджета.
+                    </div>
+                </div>
+
+                <!-- Информация о подписках -->
+                <div class="mb-4">
+                    <label class="form-label">📊 Информация о подписках</label>
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Активный экран:</strong><br>
+                                <span id="info-current-screen">-</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Всего подписок:</strong><br>
+                                <span id="info-subscription-count">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки действий -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">
+                        💾 Сохранить настройки
+                    </button>
+                    <button type="button" id="reset-settings-btn" class="btn btn-outline-secondary">
+                        ↺ Сбросить
+                    </button>
+                    <button type="button" id="refresh-info-btn" class="btn btn-outline-info">
+                        🔄 Обновить информацию
+                    </button>
+                </div>
+            </form>
+
+            <!-- Навигация -->
+            <div class="mt-4 pt-4 border-top">
+                <button class="btn btn-secondary" onclick="navigate('home')">
+                    ← На главную
+                </button>
+                <button class="btn btn-outline-primary ms-2" onclick="navigate('details')">
+                    📋 Детали
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

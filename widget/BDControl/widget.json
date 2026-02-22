@@ -1,0 +1,15 @@
+{
+  "name": "BDControl",
+  "description": "Виджет для отображения списка устройств с фильтрацией по группе устройств с учётом иерархии",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "grist": {
+    "name": "BDControl",
+    "url": "index.html",
+    "widgetId": "bdcontrol",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full"
+  }
+}

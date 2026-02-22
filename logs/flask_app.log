@@ -1,0 +1,198 @@
+2026-02-19 23:00:27,539 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-19 23:00:27,541 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-19 23:00:28,386 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-19 23:00:28,386 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-19 23:00:48,774 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:00:48] "GET /api/health HTTP/1.1" 200 -
+2026-02-19 23:03:31,295 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:03:31] "GET /api/health HTTP/1.1" 200 -
+2026-02-19 23:07:59,292 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-19 23:07:59,293 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-19 23:08:00,142 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-19 23:08:00,142 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-19 23:09:06,058 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:09:06] "[33mGET / HTTP/1.1[0m" 404 -
+2026-02-19 23:09:06,091 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:09:06] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-02-19 23:09:32,792 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:09:32] "[33mGET / HTTP/1.1[0m" 404 -
+2026-02-19 23:09:32,829 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:09:32] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-02-19 23:16:22,904 - werkzeug - INFO - 192.168.0.1 - - [19/Feb/2026 23:16:22] "[33mGET / HTTP/1.1[0m" 404 -
+2026-02-19 23:19:35,043 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:19:35] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-19 23:19:35,045 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-19 23:19:51,622 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:19:51] "OPTIONS /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-19 23:19:51,623 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-19 23:19:51,624 - __main__ - INFO - Параметры: count=10, seed=None, min=-100.0, max=100.0
+2026-02-19 23:19:51,624 - __main__ - INFO - Начало генерации 10 линий...
+2026-02-19 23:20:01,642 - __main__ - ERROR - Ошибка в пакетном режиме: Failed to start batch mode: Expecting value: line 1 column 1 (char 0)
+2026-02-19 23:20:01,642 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:20:01] "[35m[1mPOST /api/zcad/draw-random-lines HTTP/1.1[0m" 500 -
+2026-02-19 23:20:05,072 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0001', 'status': 'error', 'error': 'Connection timeout'}
+2026-02-19 23:20:05,072 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:20:05] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-19 23:20:16,870 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:20:16] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-19 23:20:16,873 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-19 23:20:46,885 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0004', 'status': 'error', 'error': 'Connection timeout'}
+2026-02-19 23:20:46,885 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:20:46] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-19 23:38:50,432 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-19 23:38:50,433 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-19 23:38:51,292 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-19 23:38:51,292 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-19 23:40:00,141 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:40:00] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-19 23:40:00,143 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-19 23:40:30,159 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0001', 'status': 'error', 'error': 'Connection timeout'}
+2026-02-19 23:40:30,160 - werkzeug - INFO - 127.0.0.1 - - [19/Feb/2026 23:40:30] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-22 15:53:17,466 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 15:53:17,468 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 15:53:18,327 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 15:53:18,327 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 15:54:10,467 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 15:54:10] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 15:54:10,469 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 15:54:12,509 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0001', 'status': 'error', 'error': 'Connection refused - is ZCAD running?'}
+2026-02-22 15:54:12,509 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 15:54:12] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-22 16:00:11,782 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 16:00:11,783 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 16:00:12,642 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 16:00:12,642 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 16:00:27,954 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:00:27] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:00:27,957 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 16:00:57,981 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0001', 'status': 'error', 'error': 'Connection timeout'}
+2026-02-22 16:00:57,981 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:00:57] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-22 16:03:35,207 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 16:03:35,208 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 16:03:36,060 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 16:03:36,060 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 16:03:53,201 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:03:53] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:03:53,203 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 16:04:23,214 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0001', 'status': 'error', 'error': 'Connection timeout'}
+2026-02-22 16:04:23,214 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:04:23] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-22 16:15:10,316 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 16:15:10,317 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 16:15:11,172 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 16:15:11,172 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 16:15:26,074 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:15:26] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:15:26,076 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 16:15:56,094 - __main__ - WARNING - ZCAD ответил с ошибкой: {'id': 'cmd-0001', 'status': 'error', 'error': 'Connection timeout'}
+2026-02-22 16:15:56,094 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:15:56] "[35m[1mPOST /api/zcad/ping HTTP/1.1[0m" 503 -
+2026-02-22 16:31:44,729 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 16:31:44,730 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 16:31:45,570 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 16:31:45,570 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 16:31:49,355 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 16:31:49,376 - __main__ - INFO - ZCAD доступен
+2026-02-22 16:31:49,377 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:31:49] "POST /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:35:33,941 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 16:35:33,955 - __main__ - INFO - ZCAD доступен
+2026-02-22 16:35:33,956 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:35:33] "POST /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:35:52,450 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:35:52] "OPTIONS /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:35:52,452 - __main__ - INFO - POST /api/zcad/ping - Проверка соединения
+2026-02-22 16:35:52,461 - __main__ - INFO - ZCAD доступен
+2026-02-22 16:35:52,461 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:35:52] "POST /api/zcad/ping HTTP/1.1" 200 -
+2026-02-22 16:35:57,738 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:35:57] "OPTIONS /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:35:57,739 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-22 16:35:57,739 - __main__ - INFO - Параметры: count=100, seed=None, min=-100.0, max=100.0
+2026-02-22 16:35:57,739 - __main__ - INFO - Начало генерации 100 линий...
+2026-02-22 16:35:59,333 - __main__ - INFO - Успешно создано 101 линий за 1.59с
+2026-02-22 16:35:59,333 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:35:59] "POST /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:11,049 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:11] "OPTIONS /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:11,051 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-22 16:36:11,051 - __main__ - INFO - Параметры: count=100, seed=None, min=-100.0, max=100.0
+2026-02-22 16:36:11,051 - __main__ - INFO - Начало генерации 100 линий...
+2026-02-22 16:36:12,687 - __main__ - INFO - Успешно создано 101 линий за 1.64с
+2026-02-22 16:36:12,687 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:12] "POST /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:24,593 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:24] "OPTIONS /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:24,595 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-22 16:36:24,595 - __main__ - INFO - Параметры: count=100, seed=None, min=-100.0, max=100.0
+2026-02-22 16:36:24,595 - __main__ - INFO - Начало генерации 100 линий...
+2026-02-22 16:36:26,184 - __main__ - INFO - Успешно создано 101 линий за 1.59с
+2026-02-22 16:36:26,185 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:26] "POST /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:27,897 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-22 16:36:27,898 - __main__ - INFO - Параметры: count=100, seed=None, min=-100.0, max=100.0
+2026-02-22 16:36:27,898 - __main__ - INFO - Начало генерации 100 линий...
+2026-02-22 16:36:29,519 - __main__ - INFO - Успешно создано 101 линий за 1.62с
+2026-02-22 16:36:29,519 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:29] "POST /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:30,417 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:30] "OPTIONS /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:30,418 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-22 16:36:30,419 - __main__ - INFO - Параметры: count=100, seed=None, min=-100.0, max=100.0
+2026-02-22 16:36:30,419 - __main__ - INFO - Начало генерации 100 линий...
+2026-02-22 16:36:32,123 - __main__ - INFO - Успешно создано 101 линий за 1.70с
+2026-02-22 16:36:32,123 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:32] "POST /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:37,073 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:37] "OPTIONS /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 16:36:37,075 - __main__ - INFO - POST /api/zcad/draw-random-lines - Запрос на генерацию линий
+2026-02-22 16:36:37,076 - __main__ - INFO - Параметры: count=100, seed=None, min=-100.0, max=100.0
+2026-02-22 16:36:37,076 - __main__ - INFO - Начало генерации 100 линий...
+2026-02-22 16:36:38,687 - __main__ - INFO - Успешно создано 101 линий за 1.61с
+2026-02-22 16:36:38,687 - werkzeug - INFO - 127.0.0.1 - - [22/Feb/2026 16:36:38] "POST /api/zcad/draw-random-lines HTTP/1.1" 200 -
+2026-02-22 20:48:09,227 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 20:48:09,228 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 20:48:10,104 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 20:48:10,104 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 20:55:22,483 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 20:55:22,484 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 20:55:23,336 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 20:55:23,336 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 21:06:00,825 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 21:06:00,826 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 21:06:01,673 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 21:06:01,674 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 21:09:23,235 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 21:09:23,236 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 21:09:24,087 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 21:09:24,088 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 21:10:42,873 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 21:10:42,875 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 21:10:43,726 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 21:10:43,727 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 21:44:42,804 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 21:44:42,805 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 21:44:43,651 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 21:44:43,652 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 22:08:31,619 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 22:08:31,620 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 22:08:32,467 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 22:08:32,468 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-22 22:13:26,857 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-22 22:13:26,857 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-22 22:13:27,697 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-22 22:13:27,697 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
