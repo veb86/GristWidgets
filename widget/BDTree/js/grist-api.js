@@ -76,18 +76,14 @@ var GristApiModule = (function() {
   function initializeGrist(onReadyCallback) {
     dataReadyCallback = onReadyCallback;
 
+    // Инициализируем Grist с минимальными настройками
+    // Важно: не передавать функции которые нельзя клонировать
     grist.ready({
-      requiredAccess: 'full',
-      onEditOptions: function(options) {
-        console.log('Options changed:', options);
-      },
-      onAccessLevel: function(level) {
-        currentAccessLevel = level;
-        console.log('Access level set to:', level);
-      }
+      requiredAccess: 'full'
     });
 
     currentAccessLevel = 'full';
+    console.log('Grist API инициализирован');
 
     // Загружаем все таблицы через docApi
     loadAllTables();

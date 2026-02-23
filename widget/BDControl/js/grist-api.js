@@ -24,6 +24,7 @@ var GristApiModule = (function() {
     devices: false,
     systemParams: false
   };
+  var onSystemChangeCallback = null;
 
   // ========================================
   // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -75,24 +76,35 @@ var GristApiModule = (function() {
   /**
    * Инициализировать Grist API
    * @param {Function} onReadyCallback - Callback когда все данные загружены
+   * @param {Function} onSystemChange - Callback при изменении SYSTEM
    */
-  function initializeGrist(onReadyCallback) {
+  function initializeGrist(onReadyCallback, onSystemChange) {
     dataReadyCallback = onReadyCallback;
+    onSystemChangeCallback = onSystemChange;
 
+    // Инициализируем Grist с минимальными настройками
+    // Важно: не передавать функции которые нельзя клонировать
     grist.ready({
-      requiredAccess: 'full',
-      onEditOptions: function(options) {
-        console.log('Options changed:', options);
-      },
-      onAccessLevel: function(level) {
-        currentAccessLevel = level;
-        console.log('Access level set to:', level);
-      }
+      requiredAccess: 'full'
     });
 
     currentAccessLevel = 'full';
+    console.log('Grist API инициализирован');
 
-    // Загружаем все таблицы через docApi
+    // Подписка на изменения через grist.onRecord для текущей таблицы
+    // Это работает когда виджет привязан к таблице
+    grist.onRecord(function(record, mappings) {
+      console.log('Запись изменена:', record, mappings);
+      // Проверяем не изменился ли selectedGroupID
+      if (onSystemChangeCallback) {
+        // Перезагружаем SYSTEM чтобы получить актуальные данные
+        loadSystemTable().then(function() {
+          onSystemChangeCallback(systemParamsData);
+        });
+      }
+    });
+
+    // Загружаем все таблицы через docApi для первичной инициализации
     loadAllTables();
   }
 
@@ -154,6 +166,23 @@ var GristApiModule = (function() {
   }
 
   /**
+   * Загрузить таблицу SYSTEM
+   * @returns {Promise<Array>} Данные SYSTEM
+   */
+  async function loadSystemTable() {
+    try {
+      console.log('[GristApi] Перезагрузка SYSTEM...');
+      var data = await grist.docApi.fetchTable('SYSTEM');
+      systemParamsData = transformTableData(data);
+      console.log('[GristApi] SYSTEM перезагружена:', systemParamsData.length, 'записей');
+      return systemParamsData;
+    } catch (error) {
+      console.error('[GristApi] Ошибка перезагрузки SYSTEM:', error.message);
+      return [];
+    }
+  }
+
+  /**
    * Получить данные групп устройств
    * @returns {Array} Массив групп
    */
@@ -205,6 +234,10 @@ var GristApiModule = (function() {
     getDevices: getDevices,
     getSystemParams: getSystemParams,
     transformTableData: transformTableData,
-    getSystemParamValue: getSystemParamValue
+    getSystemParamValue: getSystemParamValue,
+    setOnSystemChangeCallback: function(callback) {
+      onSystemChangeCallback = callback;
+    },
+    loadSystemTable: loadSystemTable
   };
 })();

@@ -43,6 +43,24 @@ var AppModule = (function(UIModule, GristApiModule, ConfigModule) {
     });
   }
 
+  /**
+   * Callback при изменении SYSTEM
+   */
+  function onSystemChange(systemParams) {
+    console.log('SYSTEM изменена:', systemParams);
+    
+    // Получаем новый selectedGroupID
+    var selectedGroupId = GristApiModule.getSystemParamValue(systemParams, 'selectedGroupID');
+    
+    console.log('Новый selectedGroupID:', selectedGroupId);
+    
+    // Обновляем выбранный ID
+    UIModule.setSelectedGroupId(selectedGroupId);
+    
+    // Перерисовываем виджет
+    UIModule.render();
+  }
+
   // ========================================
   // ПУБЛИЧНЫЕ МЕТОДЫ
   // ========================================
@@ -54,7 +72,7 @@ var AppModule = (function(UIModule, GristApiModule, ConfigModule) {
     console.log('Инициализация виджета BDControl...');
 
     // Инициализировать Grist API с callback
-    GristApiModule.initializeGrist(onDataReady);
+    GristApiModule.initializeGrist(onDataReady, onSystemChange);
 
     // Инициализировать пользовательский интерфейс
     UIModule.initializeUI();

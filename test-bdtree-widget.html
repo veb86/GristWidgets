@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BDTree Widget - Тест</title>
+  <title>BDTree Widget - Тест (jsTree)</title>
+  
+  <!-- jsTree CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
   <link rel="stylesheet" href="widget/BDTree/css/style.css">
+  
   <style>
     body {
       background: #f0f2f5;
@@ -82,9 +86,9 @@
       font-size: 12px;
     }
     .tree-stats {
+      margin-top: 15px;
       display: flex;
       gap: 20px;
-      margin-top: 10px;
     }
     .stat-item {
       background: #f3f4f6;
@@ -100,6 +104,21 @@
     .stat-label {
       font-size: 12px;
       color: #6b7280;
+    }
+    .tree-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    .log-container {
+      background: #1f2937;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
     }
   </style>
 </head>
@@ -138,6 +157,16 @@
           <div class="stat-label">Глубина</div>
         </div>
       </div>
+      
+      <div class="tree-actions">
+        <button onclick="expandAll()">Развернуть все</button>
+        <button onclick="collapseAll()">Свернуть все</button>
+      </div>
+      
+      <div class="control-group" style="margin-top: 15px;">
+        <label>Последнее сохранение:</label>
+        <span id="last-save" style="color: #666;">—</span>
+      </div>
     </div>
 
     <!-- Виджет -->
@@ -170,24 +199,29 @@
     </div>
 
     <div class="data-preview">
-      <h3>🌳 Структура дерева</h3>
-      <pre id="tree-preview"></pre>
+      <h3>📝 Лог событий</h3>
+      <div id="log-container" class="log-container">Ожидание событий...</div>
     </div>
   </div>
 
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <!-- jsTree -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+
   <script>
-    // Тестовые данные
+    // Тестовые данные - как в вашем Grist
     var testData = {
       Device_groups: [
-        { id: 1, manualSort: 1, parent_id: 0, code: 'lighting', name: 'Освещение' },
-        { id: 2, manualSort: 2, parent_id: 0, code: 'protection', name: 'Защита' },
+        { id: 1, manualSort: 1, parent_id: 0, code: 'lighting', name: 'Светотехнические устройства' },
+        { id: 2, manualSort: 2, parent_id: 0, code: 'protection', name: 'Аппарат защиты' },
         { id: 3, manualSort: 3, parent_id: 0, code: 'cables', name: 'Кабели' },
         { id: 4, manualSort: 1, parent_id: 1, code: 'luminaires', name: 'Светильники' },
         { id: 5, manualSort: 2, parent_id: 1, code: 'lamps', name: 'Лампы' },
         { id: 6, manualSort: 1, parent_id: 2, code: 'breakers', name: 'Автоматические выключатели' }
       ],
       SYSTEM: [
-        { id: 1, param: 'selectedGroupID', value: '1' }
+        { id: 1, param: 'selectedGroupID', value: '' }
       ]
     };
 
@@ -195,8 +229,9 @@
     var state = {
       deviceGroups: testData.Device_groups.slice(),
       systemParams: testData.SYSTEM.slice(),
-      selectedGroupId: 1,
-      expandedNodes: {}
+      selectedGroupId: null,
+      jstreeInstance: null,
+      nodesMap: {}
     };
 
     // DOM элементы
@@ -207,88 +242,24 @@
       messageContainer: document.getElementById('message-container'),
       groupsPreview: document.getElementById('groups-preview'),
       systemPreview: document.getElementById('system-preview'),
-      treePreview: document.getElementById('tree-preview'),
+      logContainer: document.getElementById('log-container'),
+      lastSave: document.getElementById('last-save'),
       statTotal: document.getElementById('stat-total'),
       statRoots: document.getElementById('stat-roots'),
       statDepth: document.getElementById('stat-depth')
     };
 
-    // ========================================
-    // Логика дерева
-    // ========================================
-
-    function buildTree() {
-      var groups = state.deviceGroups;
-      var childrenMap = {};
-
-      groups.forEach(function(group) {
-        childrenMap[group.id] = [];
-      });
-
-      groups.forEach(function(group) {
-        var parentId = group.parent_id || 0;
-        if (childrenMap.hasOwnProperty(parentId)) {
-          childrenMap[parentId].push(group);
-        } else {
-          childrenMap[0] = childrenMap[0] || [];
-          childrenMap[0].push(group);
-        }
-      });
-
-      Object.keys(childrenMap).forEach(function(key) {
-        childrenMap[key].sort(function(a, b) {
-          return (a.manualSort || 0) - (b.manualSort || 0);
-        });
-      });
-
-      function buildNode(group) {
-        var node = {
-          id: group.id,
-          code: group.code || '',
-          name: group.name || '',
-          children: []
-        };
-        if (childrenMap[group.id]) {
-          node.children = childrenMap[group.id].map(function(child) {
-            return buildNode(child);
-          });
-        }
-        return node;
-      }
-
-      return (childrenMap[0] || []).map(function(root) {
-        return buildNode(root);
-      });
-    }
-
-    function findNode(nodeId, nodes) {
-      for (var i = 0; i < nodes.length; i++) {
-        var node = nodes[i];
-        if (node.id === nodeId) return node;
-        if (node.children.length > 0) {
-          var found = findNode(nodeId, node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    }
-
-    function getPathToNode(nodeId, nodes, path) {
-      if (!path) path = [];
-      for (var i = 0; i < nodes.length; i++) {
-        var node = nodes[i];
-        var currentPath = path.concat([node.id]);
-        if (node.id === nodeId) return currentPath;
-        if (node.children.length > 0) {
-          var found = getPathToNode(nodeId, node.children, currentPath);
-          if (found) return found;
-        }
-      }
-      return null;
+    // Логгер
+    function log(message) {
+      var time = new Date().toLocaleTimeString();
+      var logLine = '[' + time + '] ' + message;
+      console.log(logLine);
+      elements.logContainer.innerHTML += '<div>' + logLine + '</div>';
+      elements.logContainer.scrollTop = elements.logContainer.scrollHeight;
     }
 
     // ========================================
-    // Отрисовка
+    // Построение иерархии (как в tree.js)
     // ========================================
 
     function escapeHtml(text) {
@@ -301,135 +272,274 @@
         .replace(/'/g, '&#039;');
     }
 
-    function renderNode(node, level) {
-      var hasChildren = node.children && node.children.length > 0;
-      var isExpanded = state.expandedNodes[node.id] !== false;
-      var isSelected = state.selectedGroupId === node.id;
-
-      var toggleClass = 'tree-toggle';
-      if (!hasChildren) toggleClass += ' leaf';
-      else if (isExpanded) toggleClass += ' expanded';
-
-      var contentClass = 'tree-node-content';
-      if (isSelected) contentClass += ' selected';
-
-      var iconChar = hasChildren ? '📁' : '📄';
-      var countHtml = hasChildren ? '<span class="tree-node-count">' + node.children.length + '</span>' : '';
-
-      var html = '<li class="tree-node" data-id="' + node.id + '">' +
-        '<div class="' + contentClass + '">' +
-          '<span class="' + toggleClass + '">' + (hasChildren ? '▶' : '') + '</span>' +
-          '<span class="tree-node-icon">' + iconChar + '</span>' +
-          '<span class="tree-node-text">' +
-            '<span class="tree-node-code">' + escapeHtml(node.code) + '</span>' +
-            '<span class="tree-node-name">' + escapeHtml(node.name) + '</span>' +
-          '</span>' +
-          countHtml +
-        '</div>';
-
-      if (hasChildren) {
-        var childrenClass = isExpanded ? 'tree-children' : 'tree-children collapsed';
-        html += '<li class="tree-node-children"><ul class="' + childrenClass + '">';
-        node.children.forEach(function(child) {
-          html += renderNode(child, level + 1);
-        });
-        html += '</ul></li>';
+    function buildNodeText(group) {
+      var name = escapeHtml(group.name || '');
+      var code = escapeHtml(group.code || '');
+      
+      if (name && code) {
+        return '<span class="node-name">' + name + '</span>' +
+               '<span class="node-separator">—</span>' +
+               '<span class="node-code">' + code + '</span>';
       }
-
-      html += '</li>';
-      return html;
+      if (name) return '<span class="node-name">' + name + '</span>';
+      if (code) return '<span class="node-code">' + code + '</span>';
+      return '';
     }
 
-    function renderTree() {
-      var tree = buildTree();
+    function createNodesMap(groups) {
+      var map = {};
+      groups.forEach(function(group) {
+        map[group.id] = {
+          id: group.id,
+          text: buildNodeText(group),
+          code: group.code || '',
+          name: group.name || '',
+          parentId: group.parent_id || 0,
+          children: [],
+          recordId: group.id
+        };
+      });
+      return map;
+    }
 
-      if (!tree || tree.length === 0) {
+    function linkParentChild(map, groups) {
+      groups.forEach(function(group) {
+        var nodeId = group.id;
+        var parentId = group.parent_id || 0;
+        
+        if (parentId !== 0 && map[parentId]) {
+          map[nodeId].parentId = parentId;
+          if (map[parentId].children.indexOf(nodeId) === -1) {
+            map[parentId].children.push(nodeId);
+          }
+        }
+      });
+    }
+
+    function findRootNodes(map) {
+      var roots = [];
+      Object.values(map).forEach(function(node) {
+        if (!node.parentId || !map[node.parentId]) {
+          roots.push(node);
+        }
+      });
+      return roots;
+    }
+
+    function buildJsTreeNode(node, map) {
+      var hasChildren = node.children && node.children.length > 0;
+      
+      var jsTreeNode = {
+        id: String(node.id),
+        text: node.text,
+        state: { opened: true, selected: false },
+        data: {
+          devGroupId: node.id,
+          code: node.code,
+          name: node.name,
+          recordId: node.recordId,
+          children: node.children
+        },
+        li_attr: { 'data-group-id': node.id },
+        a_attr: { 'href': '#', 'data-group-id': node.id }
+      };
+      
+      if (hasChildren) {
+        jsTreeNode.children = [];
+        node.children.forEach(function(childId) {
+          var childNode = map[childId];
+          if (childNode) {
+            jsTreeNode.children.push(buildJsTreeNode(childNode, map));
+          }
+        });
+        jsTreeNode.icon = 'jstree-folder';
+      } else {
+        jsTreeNode.icon = 'jstree-file';
+      }
+      
+      return jsTreeNode;
+    }
+
+    function convertToJsTreeData(groups) {
+      if (!groups || groups.length === 0) return [];
+
+      groups.sort(function(a, b) {
+        return (a.manualSort || 0) - (b.manualSort || 0);
+      });
+
+      state.nodesMap = createNodesMap(groups);
+      linkParentChild(state.nodesMap, groups);
+      var rootNodes = findRootNodes(state.nodesMap);
+      
+      var jsTreeData = [];
+      rootNodes.forEach(function(rootNode) {
+        jsTreeData.push(buildJsTreeNode(rootNode, state.nodesMap));
+      });
+      
+      return jsTreeData;
+    }
+
+    // ========================================
+    // Отрисовка
+    // ========================================
+
+    function renderTree() {
+      var treeData = convertToJsTreeData(state.deviceGroups);
+
+      if (!treeData || treeData.length === 0) {
         elements.treeRoot.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌳</div><p>Нет данных для отображения</p></div>';
         return;
       }
 
-      var html = '<ul class="tree-root">';
-      tree.forEach(function(node) {
-        html += renderNode(node, 0);
-      });
-      html += '</ul>';
-
-      elements.treeRoot.innerHTML = html;
-
-      // Обновляем информацию
-      if (state.selectedGroupId) {
-        var node = findNode(state.selectedGroupId, tree);
-        if (node) {
-          elements.selectedInfo.textContent = node.code + ' — ' + node.name;
-          elements.selectedInfo.classList.add('has-value');
-        } else {
-          elements.selectedInfo.textContent = 'Группа удалена';
-          elements.selectedInfo.classList.remove('has-value');
-        }
-      } else {
-        elements.selectedInfo.textContent = 'Не выбрано';
-        elements.selectedInfo.classList.remove('has-value');
+      // Уничтожаем старое дерево
+      if (state.jstreeInstance) {
+        $(elements.treeRoot).jstree('destroy');
       }
 
+      // Создаём новое дерево
+      $(elements.treeRoot).jstree({
+        core: {
+          data: treeData,
+          themes: { name: 'default', responsive: true, dots: false },
+          animation: 150,
+          check_callback: true
+        },
+        plugins: ['types', 'wholerow'],
+        types: {
+          'default': { icon: 'jstree-folder' },
+          'file': { icon: 'jstree-file' }
+        },
+        wholerow: { stripes: false }
+      });
+
+      // Обработчик выбора - ВАЖНО: работает для всех уровней
+      $(elements.treeRoot).on('select_node.jstree', function(event, data) {
+        if (data.node) {
+          var groupId = null;
+          
+          // Получаем ID из data.devGroupId
+          if (data.node.data && data.node.data.devGroupId !== undefined) {
+            groupId = data.node.data.devGroupId;
+          }
+          // Получаем из li_attr
+          else if (data.node.li_attr && data.node.li_attr['data-group-id']) {
+            groupId = parseInt(data.node.li_attr['data-group-id'], 10);
+          }
+          // Получаем из id
+          else if (data.node.id) {
+            groupId = parseInt(data.node.id, 10);
+          }
+          
+          log('Выбран узел: ' + data.node.text + ' (ID: ' + groupId + ')');
+          
+          state.selectedGroupId = groupId;
+          state.systemParams[0].value = String(groupId);
+          
+          updateSelectedInfo();
+          updatePreview();
+          updateLastSave();
+        }
+      });
+
+      state.jstreeInstance = $(elements.treeRoot).jstree(true);
+
+      // Выделяем текущий узел
+      setTimeout(function() {
+        if (state.selectedGroupId) {
+          updateSelectedInfo();
+          var node = state.jstreeInstance.get_node(String(state.selectedGroupId));
+          if (node) {
+            state.jstreeInstance.select_node(node);
+            state.jstreeInstance.open_to(state.selectedGroupId);
+          }
+        }
+      }, 100);
+
       // Статистика
+      updateStats(treeData);
+      log('Дерево отрисовано: ' + state.deviceGroups.length + ' узлов');
+    }
+
+    function updateSelectedInfo() {
+      var group = state.deviceGroups.find(function(g) {
+        return g.id === state.selectedGroupId;
+      });
+
+      if (group) {
+        elements.selectedInfo.textContent = group.name + ' (' + group.code + ')';
+        elements.selectedInfo.classList.add('has-value');
+      } else {
+        elements.selectedInfo.textContent = 'Группа удалена';
+        elements.selectedInfo.classList.remove('has-value');
+      }
+    }
+
+    function updateStats(treeData) {
       elements.statTotal.textContent = state.deviceGroups.length;
-      elements.statRoots.textContent = tree.length;
+      elements.statRoots.textContent = state.deviceGroups.filter(function(g) {
+        return !g.parent_id || g.parent_id === 0;
+      }).length;
 
       function calcDepth(nodes, depth) {
         var max = depth;
         nodes.forEach(function(node) {
-          if (node.children.length > 0) {
+          if (node.children && node.children.length > 0) {
             var d = calcDepth(node.children, depth + 1);
             if (d > max) max = d;
           }
         });
         return max;
       }
-      elements.statDepth.textContent = calcDepth(tree, 1);
+      elements.statDepth.textContent = calcDepth(treeData, 1);
+    }
+
+    function updatePreview() {
+      elements.groupsPreview.textContent = JSON.stringify(state.deviceGroups, null, 2);
+      elements.systemPreview.textContent = JSON.stringify(state.systemParams, null, 2);
+    }
+
+    function updateLastSave() {
+      var now = new Date();
+      elements.lastSave.textContent = now.toLocaleTimeString();
     }
 
     // ========================================
     // Обработчики
     // ========================================
 
-    elements.treeRoot.addEventListener('click', function(event) {
-      var toggle = event.target.closest('.tree-toggle');
-      if (toggle && !toggle.classList.contains('leaf')) {
-        event.stopPropagation();
-        var treeNode = toggle.closest('.tree-node');
-        var nodeId = parseInt(treeNode.dataset.id, 10);
-        state.expandedNodes[nodeId] = !state.expandedNodes[nodeId];
-        renderTree();
-        return;
-      }
-
-      var nodeContent = event.target.closest('.tree-node-content');
-      if (nodeContent) {
-        var treeNode = nodeContent.closest('.tree-node');
-        var nodeId = parseInt(treeNode.dataset.id, 10);
-        state.selectedGroupId = nodeId;
-        state.systemParams[0].value = String(nodeId);
-        renderTree();
-        updatePreview();
-      }
-    });
-
     function updateSelectedGroup() {
       var value = elements.selectedGroupSelect.value;
       state.selectedGroupId = value ? parseInt(value, 10) : null;
       state.systemParams[0].value = value || '';
-      renderTree();
+      
+      if (state.jstreeInstance && state.selectedGroupId) {
+        var node = state.jstreeInstance.get_node(String(state.selectedGroupId));
+        if (node) {
+          state.jstreeInstance.select_node(node);
+          state.jstreeInstance.open_to(state.selectedGroupId);
+          log('Выбрана группа из селектора: ' + node.text);
+        } else {
+          log('Группа не найдена в дереве: ' + state.selectedGroupId);
+        }
+      }
+      
+      updateSelectedInfo();
       updatePreview();
+      updateLastSave();
     }
 
-    function updateInfo() {
-      elements.selectedGroupSelect.value = state.selectedGroupId || '';
+    function expandAll() {
+      if (state.jstreeInstance) {
+        state.jstreeInstance.open_all();
+        log('Развернуты все узлы');
+      }
     }
 
-    function updatePreview() {
-      elements.groupsPreview.textContent = JSON.stringify(state.deviceGroups, null, 2);
-      elements.systemPreview.textContent = JSON.stringify(state.systemParams, null, 2);
-      elements.treePreview.textContent = JSON.stringify(buildTree(), null, 2);
+    function collapseAll() {
+      if (state.jstreeInstance) {
+        state.jstreeInstance.close_all();
+        log('Свернуты все узлы');
+      }
     }
 
     // ========================================
@@ -437,9 +547,10 @@
     // ========================================
 
     function init() {
-      updateInfo();
+      elements.selectedGroupSelect.value = state.selectedGroupId || '';
       updatePreview();
       renderTree();
+      log('Тестовая страница инициализирована');
     }
 
     init();

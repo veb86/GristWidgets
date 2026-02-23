@@ -1,7 +1,7 @@
 /**
  * Модуль для работы с пользовательским интерфейсом
  *
- * Этот модуль отвечает за отрисовку дерева,
+ * Этот модуль отвечает за отрисовку дерева через jsTree,
  * обработку событий и взаимодействие с пользователем.
  *
  * @module UIModule
@@ -15,31 +15,14 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
   // ========================================
 
   var selectedGroupId = null;
-  var expandedNodes = {};
   var treeContainer = null;
   var selectedInfoElement = null;
   var messageContainer = null;
+  var isInitialized = false;
 
   // ========================================
   // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
   // ========================================
-
-  /**
-   * Экранировать HTML символы
-   * @param {string} text - Текст для экранирования
-   * @returns {string} Экранированный текст
-   */
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return '';
-    var map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    };
-    return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
-  }
 
   /**
    * Показать сообщение
@@ -58,182 +41,25 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
    */
   function hideMessage() {
     if (!messageContainer) return;
-
     messageContainer.style.display = 'none';
     messageContainer.innerHTML = '';
   }
 
   /**
-   * Создать HTML для узла дерева
-   * @param {Object} node - Узел дерева
-   * @param {number} level - Уровень вложенности
-   * @returns {string} HTML строка
+   * Экранировать HTML
+   * @param {string} text - Текст
+   * @returns {string} Экранированный текст
    */
-  function createNodeHtml(node, level) {
-    var hasChildren = node.children && node.children.length > 0;
-    var isExpanded = expandedNodes[node.id] !== false; // По умолчанию развернуты
-    var isSelected = selectedGroupId === node.id;
-
-    // Классы для toggle кнопки
-    var toggleClass = 'tree-toggle';
-    if (!hasChildren) {
-      toggleClass += ' leaf';
-    } else if (isExpanded) {
-      toggleClass += ' expanded';
-    }
-
-    // Классы для контента
-    var contentClass = 'tree-node-content';
-    if (isSelected) {
-      contentClass += ' selected';
-    }
-
-    // Иконка узла
-    var iconClass = hasChildren ? 'tree-node-icon folder' : 'tree-node-icon file';
-    var iconChar = hasChildren ? '📁' : '📄';
-
-    // Счётчик детей
-    var countHtml = '';
-    if (hasChildren) {
-      countHtml = '<span class="tree-node-count">' + node.children.length + '</span>';
-    }
-
-    return '<li class="tree-node" data-id="' + node.id + '" data-level="' + level + '">' +
-      '<div class="' + contentClass + '">' +
-        '<span class="' + toggleClass + '">' + (hasChildren ? '▶' : '') + '</span>' +
-        '<span class="' + iconClass + '">' + iconChar + '</span>' +
-        '<span class="tree-node-text">' +
-          '<span class="tree-node-code">' + escapeHtml(node.code) + '</span>' +
-          '<span class="tree-node-name">' + escapeHtml(node.name) + '</span>' +
-        '</span>' +
-        countHtml +
-      '</div>';
-  }
-
-  /**
-   * Рекурсивная отрисовка дерева
-   * @param {Array} nodes - Массив узлов
-   * @param {number} level - Текущий уровень
-   * @returns {string} HTML всех узлов
-   */
-  function renderNodes(nodes, level) {
-    if (!nodes || nodes.length === 0) {
-      return '';
-    }
-
-    var html = '<ul class="tree-children">';
-
-    nodes.forEach(function(node) {
-      html += createNodeHtml(node, level);
-
-      // Дочерние узлы
-      if (node.children && node.children.length > 0) {
-        var isExpanded = expandedNodes[node.id] !== false;
-        var childrenClass = 'tree-children';
-        if (!isExpanded) {
-          childrenClass += ' collapsed';
-        }
-        html += '<li class="tree-node-children" data-parent-id="' + node.id + '">' +
-                '<' + childrenClass + '>' +
-                  renderNodes(node.children, level + 1) +
-                '</ul></li>';
-      }
-
-      html += '</li>';
-    });
-
-    html += '</ul>';
-
-    return html;
-  }
-
-  /**
-   * Обработчик клика по узлу
-   * @param {Event} event
-   */
-  function handleNodeClick(event) {
-    var nodeContent = event.target.closest('.tree-node-content');
-    if (!nodeContent) return;
-
-    var treeNode = nodeContent.closest('.tree-node');
-    if (!treeNode) return;
-
-    var nodeId = parseInt(treeNode.dataset.id, 10);
-
-    // Переключаем выделение
-    selectNode(nodeId);
-  }
-
-  /**
-   * Обработчик клика по toggle кнопке
-   * @param {Event} event
-   */
-  function handleToggleClick(event) {
-    var toggle = event.target.closest('.tree-toggle');
-    if (!toggle || toggle.classList.contains('leaf')) return;
-
-    event.stopPropagation();
-
-    var treeNode = toggle.closest('.tree-node');
-    if (!treeNode) return;
-
-    var nodeId = parseInt(treeNode.dataset.id, 10);
-    var childrenLi = treeNode.querySelector('.tree-node-children');
-
-    if (!childrenLi) return;
-
-    var childrenUl = childrenLi.querySelector('.tree-children');
-    if (!childrenUl) return;
-
-    // Переключаем состояние
-    expandedNodes[nodeId] = !expandedNodes[nodeId];
-    toggle.classList.toggle('expanded', expandedNodes[nodeId]);
-    childrenUl.classList.toggle('collapsed', !expandedNodes[nodeId]);
-  }
-
-  /**
-   * Выбрать узел
-   * @param {number} nodeId - ID узла
-   */
-  function selectNode(nodeId) {
-    // Снимаем выделение со всех узлов
-    var allNodes = treeContainer.querySelectorAll('.tree-node-content');
-    allNodes.forEach(function(node) {
-      node.classList.remove('selected');
-    });
-
-    // Выделяем выбранный узел
-    var selectedNode = treeContainer.querySelector('.tree-node[data-id="' + nodeId + '"] .tree-node-content');
-    if (selectedNode) {
-      selectedNode.classList.add('selected');
-    }
-
-    // Обновляем состояние
-    selectedGroupId = nodeId;
-    updateSelectedInfo();
-
-    // Записываем в SYSTEM
-    saveToGrist(nodeId);
-
-    // Разворачиваем путь к узлу
-    expandPathToNode(nodeId);
-  }
-
-  /**
-   * Развернуть путь к узлу
-   * @param {number} nodeId - ID целевого узла
-   */
-  function expandPathToNode(nodeId) {
-    var path = TreeModule.getPathToNode(nodeId);
-    if (!path) return;
-
-    // Разворачиваем все узлы кроме последнего
-    for (var i = 0; i < path.length - 1; i++) {
-      expandedNodes[path[i]] = true;
-    }
-
-    // Перерисовываем
-    render();
+  function escapeHtml(text) {
+    if (!text) return '';
+    var map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
   }
 
   /**
@@ -242,11 +68,12 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
    */
   async function saveToGrist(groupId) {
     try {
+      console.log('[UI] Сохранение в Grist: selectedGroupID =', groupId);
       await GristApiModule.setSelectedGroupId(groupId);
       console.log('[UI] selectedGroupID сохранён:', groupId);
     } catch (error) {
       console.error('[UI] Ошибка сохранения в Grist:', error);
-      showMessage('Ошибка сохранения выбора: ' + error.message, 'error');
+      showMessage('Ошибка сохранения: ' + error.message, 'error');
     }
   }
 
@@ -261,14 +88,6 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
     treeContainer = document.getElementById('tree-root');
     selectedInfoElement = document.getElementById('selected-info');
     messageContainer = document.getElementById('message-container');
-
-    // Обработчики событий
-    if (treeContainer) {
-      treeContainer.addEventListener('click', function(event) {
-        handleToggleClick(event);
-        handleNodeClick(event);
-      });
-    }
   }
 
   /**
@@ -291,13 +110,58 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
       return;
     }
 
-    var node = TreeModule.findNodeById(selectedGroupId);
-    if (node) {
-      selectedInfoElement.textContent = node.code + ' — ' + node.name;
+    // Находим группу в данных
+    var groups = GristApiModule.getDeviceGroups();
+    var group = groups.find(function(g) {
+      return g.id === selectedGroupId;
+    });
+
+    if (group) {
+      selectedInfoElement.textContent = group.name + ' (' + group.code + ')';
       selectedInfoElement.classList.add('has-value');
     } else {
       selectedInfoElement.textContent = 'Группа удалена';
       selectedInfoElement.classList.remove('has-value');
+    }
+  }
+
+  /**
+   * Обработчик выбора узла
+   * @param {Object} node - Узел jsTree
+   */
+  function handleNodeSelect(node) {
+    console.log('[UI] Выбор узла:', node);
+    console.log('[UI] Данные узла:', node.data);
+    console.log('[UI] ID узла:', node.id);
+    
+    // Получаем ID группы из data узла
+    var groupId = null;
+    
+    // Пробуем получить из data.devGroupId
+    if (node.data && node.data.devGroupId !== undefined) {
+      groupId = node.data.devGroupId;
+      console.log('[UI] ID из data.devGroupId:', groupId);
+    }
+    // Пробуем получить из li_attr
+    else if (node.li_attr && node.li_attr['data-group-id']) {
+      groupId = parseInt(node.li_attr['data-group-id'], 10);
+      console.log('[UI] ID из li_attr:', groupId);
+    }
+    // Пробуем получить из id узла
+    else if (node.id) {
+      groupId = parseInt(node.id, 10);
+      console.log('[UI] ID из node.id:', groupId);
+    }
+    
+    console.log('[UI] Финальный ID группы:', groupId);
+
+    if (groupId && !isNaN(groupId)) {
+      selectedGroupId = groupId;
+      updateSelectedInfo();
+      saveToGrist(groupId);
+    } else {
+      console.error('[UI] Не удалось получить ID группы из узла:', node);
+      showMessage('Ошибка: не удалось определить ID группы', 'error');
     }
   }
 
@@ -307,13 +171,15 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
   function render() {
     hideMessage();
 
-    if (!treeContainer) return;
+    if (!treeContainer) {
+      console.error('[UI] tree-root не найден');
+      return;
+    }
 
-    // Строим дерево
-    var tree = TreeModule.buildTree();
+    var groups = GristApiModule.getDeviceGroups();
 
-    // Проверка на пустое дерево
-    if (!tree || tree.length === 0) {
+    // Проверка на пустые данные
+    if (!groups || groups.length === 0) {
       treeContainer.innerHTML = '<div class="empty-state">' +
         '<div class="empty-state-icon">🌳</div>' +
         '<p>Нет данных для отображения</p>' +
@@ -321,31 +187,29 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
       return;
     }
 
-    // Проверка иерархии
-    var validation = TreeModule.validateHierarchy();
-    if (!validation.valid) {
-      console.warn('[UI] Проблемы с иерархией:', validation.issues);
-      // Продолжаем отрисовку, но логируем проблемы
-    }
+    // Устанавливаем данные в Tree модуль
+    TreeModule.setGroups(groups);
 
-    // Отрисовка
-    treeContainer.innerHTML = renderNodes(tree, 0);
+    // Уничтожаем старое дерево если есть
+    TreeModule.destroy();
 
-    // Выделяем текущий узел
-    if (selectedGroupId) {
-      updateSelectedInfo();
+    // Инициализируем jsTree
+    TreeModule.initJsTree('#tree-root', handleNodeSelect);
 
-      // Находим и выделяем узел
-      var selectedNode = treeContainer.querySelector('.tree-node[data-id="' + selectedGroupId + '"] .tree-node-content');
-      if (selectedNode) {
-        selectedNode.classList.add('selected');
+    isInitialized = true;
+
+    // Выделяем текущий узел после инициализации с задержкой
+    setTimeout(function() {
+      if (selectedGroupId) {
+        updateSelectedInfo();
+        console.log('[UI] Выделение узла:', selectedGroupId);
+        TreeModule.selectNode(selectedGroupId);
       }
+    }, 200);
 
-      // Разворачиваем путь
-      expandPathToNode(selectedGroupId);
-    }
-
-    console.log('[UI] Дерево отрисовано');
+    // Статистика
+    var stats = TreeModule.getTreeStats();
+    console.log('[UI] Дерево отрисовано:', stats);
   }
 
   /**
@@ -353,17 +217,31 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
    */
   function showLoading() {
     if (!treeContainer) return;
-
     treeContainer.innerHTML = '<div class="loading">Загрузка данных...</div>';
   }
 
   /**
-   * Обновить данные и перерисовать
-   * @param {Array} groups - Новые данные групп
+   * Перерисовать дерево (обновление данных)
    */
-  function updateData(groups) {
-    TreeModule.setGroups(groups);
-    render();
+  function refresh() {
+    if (isInitialized) {
+      TreeModule.destroy();
+      render();
+    }
+  }
+
+  /**
+   * Развернуть все узлы
+   */
+  function expandAll() {
+    TreeModule.openAll();
+  }
+
+  /**
+   * Свернуть все узлы
+   */
+  function collapseAll() {
+    TreeModule.closeAll();
   }
 
   // ========================================
@@ -374,8 +252,11 @@ var UIModule = (function(GristApiModule, TreeModule, ConfigModule) {
     initializeUI: initializeUI,
     setSelectedGroupId: setSelectedGroupId,
     updateSelectedInfo: updateSelectedInfo,
+    handleNodeSelect: handleNodeSelect,
     render: render,
     showLoading: showLoading,
-    updateData: updateData
+    refresh: refresh,
+    expandAll: expandAll,
+    collapseAll: collapseAll
   };
 })(GristApiModule, TreeModule, ConfigModule);
