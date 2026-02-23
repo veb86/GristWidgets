@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Минимальный тест BDControl</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+    .log { white-space: pre-wrap; }
+    .success { color: #4ec9b0; }
+    .error { color: #f48771; }
+    .info { color: #569cd6; }
+  </style>
+</head>
+<body>
+  <h1>Минимальный тест BDControl</h1>
+  <div class="log" id="log"></div>
+
+  <script src="./grist-plugin-api.js"></script>
+  <script>
+    var logEl = document.getElementById('log');
+    function log(msg, cls) {
+      cls = cls || '';
+      logEl.innerHTML += '<div class="' + cls + '">[' + new Date().toLocaleTimeString() + '] ' + msg + '</div>';
+      console.log(msg);
+    }
+
+    function transformTableData(tableData) {
+      if (!tableData || !tableData.id || !Array.isArray(tableData.id)) return [];
+      var columns = Object.keys(tableData).filter(k => k !== 'id');
+      var records = [];
+      for (var i = 0; i < tableData.id.length; i++) {
+        var record = { id: tableData.id[i] };
+        columns.forEach(col => record[col] = tableData[col][i]);
+        records.push(record);
+      }
+      return records;
+    }
+
+    async function runTest() {
+      log('=== ЗАПУСК ТЕСТА ===', 'info');
+      
+      try {
+        grist.ready({ requiredAccess: 'full' });
+        log('Grist готов', 'success');
+
+        // Тест 1: Загрузка Device_groups
+        log('\n--- Тест 1: Device_groups ---', 'info');
+        var dg = await grist.docApi.fetchTable('Device_groups');
+        var dgData = transformTableData(dg);
+        log('Device_groups: ' + dgData.length + ' записей', dgData.length > 0 ? 'success' : 'error');
+        dgData.forEach(r => log('  id=' + r.id + ', name=' + r.name));
+
+        // Тест 2: Загрузка Device
+        log('\n--- Тест 2: Device ---', 'info');
+        var d = await grist.docApi.fetchTable('Device');
+        var dData = transformTableData(d);
+        log('Device: ' + dData.length + ' записей', dData.length > 0 ? 'success' : 'error');
+        dData.forEach(r => log('  id=' + r.id + ', name=' + r.name + ', devgroup_id=' + r.devgroup_id));
+
+        // Тест 3: Загрузка SYSTEM
+        log('\n--- Тест 3: SYSTEM ---', 'info');
+        var s = await grist.docApi.fetchTable('SYSTEM');
+        var sData = transformTableData(s);
+        log('SYSTEM: ' + sData.length + ' записей', sData.length > 0 ? 'success' : 'error');
+        sData.forEach(r => log('  param=' + r.param + ', value=' + r.value));
+        var selectedGroupId = sData.find(r => r.param === 'selectedGroupID');
+        log('selectedGroupID = ' + (selectedGroupId ? selectedGroupId.value : 'не найден'), 'info');
+
+        // Тест 4: Загрузка Group_Characteristics
+        log('\n--- Тест 4: Group_Characteristics ---', 'info');
+        var gc = await grist.docApi.fetchTable('Group_Characteristics');
+        var gcData = transformTableData(gc);
+        log('Group_Characteristics: ' + gcData.length + ' записей', gcData.length > 0 ? 'success' : 'error');
+        gcData.forEach(r => log('  group_id=' + r.group_id + ', char_id=' + r.characteristic_id + ', visible=' + r.is_visible));
+
+        // Тест 5: Загрузка Characteristics
+        log('\n--- Тест 5: Characteristics ---', 'info');
+        var c = await grist.docApi.fetchTable('Characteristics');
+        var cData = transformTableData(c);
+        log('Characteristics: ' + cData.length + ' записей', cData.length > 0 ? 'success' : 'error');
+        cData.forEach(r => log('  id=' + r.id + ', code=' + r.code + ', name=' + r.name));
+
+        // Тест 6: Загрузка Device_characteristics
+        log('\n--- Тест 6: Device_characteristics ---', 'info');
+        var dc = await grist.docApi.fetchTable('Device_characteristics');
+        var dcData = transformTableData(dc);
+        log('Device_characteristics: ' + dcData.length + ' записей', dcData.length > 0 ? 'success' : 'error');
+        dcData.forEach(r => log('  device_id=' + r.device_id + ', char_id=' + r.characteristic_id + ', str=' + r.value_string + ', flt=' + r.value_float + ', int=' + r.value_int));
+
+        // Тест 7: Проверка связи для группы 4
+        log('\n=== ТЕСТ 7: Связи для группы 4 (Светильники) ===', 'info');
+        var group4Chars = gcData.filter(r => r.group_id === 4);
+        log('Характеристики для группы 4: ' + group4Chars.length, 'info');
+        group4Chars.forEach(gc => {
+          var char = cData.find(c => c.id === gc.characteristic_id);
+          log('  ' + (char ? char.name : 'не найдено') + ' (' + (char ? char.code : '?') + ')');
+        });
+
+        // Тест 8: Значения для устройства 1
+        log('\n=== ТЕСТ 8: Значения для устройства 1 ===', 'info');
+        var device1Chars = dcData.filter(r => r.device_id === 1);
+        log('Характеристики устройства 1: ' + device1Chars.length, 'info');
+        device1Chars.forEach(dc => {
+          var char = cData.find(c => c.id === dc.characteristic_id);
+          var value = dc.value_string || dc.value_float || dc.value_int;
+          log('  ' + (char ? char.name : '?') + ' = ' + value);
+        });
+
+        log('\n=== ТЕСТ ЗАВЕРШЁН ===', 'success');
+
+      } catch (e) {
+        log('ОШИБКА: ' + e.message, 'error');
+        log(e.stack, 'error');
+      }
+    }
+
+    runTest();
+  </script>
+</body>
+</html>

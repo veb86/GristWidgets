@@ -18,6 +18,26 @@ var ConfigModule = (function() {
   var DEFAULT_SORT_FIELD = 'manualSort';
   var DEFAULT_SORT_DIRECTION = 'asc';
 
+  // Базовые колонки которые всегда отображаются
+  var BASE_COLUMNS = ['name', 'brand', 'factoryname', 'unit', 'count', 'note', 'gristHelper_Display2'];
+
+  // Настройки видимости столбцов по умолчанию
+  var DEFAULT_COLUMN_VISIBILITY = {
+    // Базовые колонки
+    'name': { visible: true, width: 200, title: 'Наименование' },
+    'brand': { visible: true, width: 150, title: 'Модель' },
+    'factoryname': { visible: true, width: 150, title: 'Производитель' },
+    'unit': { visible: true, width: 80, title: 'Ед. изм.' },
+    'count': { visible: true, width: 100, title: 'Количество' },
+    'note': { visible: true, widthGrow: 1, title: 'Примечание' },
+    'gristHelper_Display2': { visible: true, width: 150, title: 'Группа' },
+    // Характеристики (добавляются динамически)
+    'power': { visible: true, width: 120, title: 'Мощность', unit: 'Вт' },
+    'voltage': { visible: true, width: 100, title: 'Напряжение', unit: 'В' },
+    'luminous_flux': { visible: true, width: 120, title: 'Световой поток', unit: 'лм' },
+    'color_temperature': { visible: true, width: 120, title: 'Температура', unit: 'К' }
+  };
+
   // ========================================
   // ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
   // ========================================
@@ -27,7 +47,9 @@ var ConfigModule = (function() {
    */
   var config = {
     sortField: DEFAULT_SORT_FIELD,
-    sortDirection: DEFAULT_SORT_DIRECTION
+    sortDirection: DEFAULT_SORT_DIRECTION,
+    columnVisibility: JSON.parse(JSON.stringify(DEFAULT_COLUMN_VISIBILITY)),
+    currentGroupId: null // ID текущей группы для контекстных настроек
   };
 
   // ========================================
@@ -69,6 +91,73 @@ var ConfigModule = (function() {
     }
   }
 
+  /**
+   * Получить настройки видимости колонок
+   *
+   * @returns {Object} Объект с настройками видимости
+   */
+  function getColumnVisibility() {
+    return JSON.parse(JSON.stringify(config.columnVisibility));
+  }
+
+  /**
+   * Получить настройки видимости для конкретной колонки
+   *
+   * @param {string} columnCode - Код колонки
+   * @returns {Object|undefined} Настройки колонки или undefined
+   */
+  function getColumnVisibilitySetting(columnCode) {
+    return config.columnVisibility[columnCode];
+  }
+
+  /**
+   * Установить видимость колонки
+   *
+   * @param {string} columnCode - Код колонки
+   * @param {boolean} isVisible - Видимость
+   */
+  function setColumnVisibility(columnCode, isVisible) {
+    if (config.columnVisibility[columnCode]) {
+      config.columnVisibility[columnCode].visible = isVisible;
+      console.log('Видимость колонки обновлена:', columnCode, '=', isVisible);
+    }
+  }
+
+  /**
+   * Установить текущую группу для контекстных настроек
+   *
+   * @param {number} groupId - ID группы
+   */
+  function setCurrentGroupId(groupId) {
+    config.currentGroupId = groupId;
+  }
+
+  /**
+   * Получить текущую группу
+   *
+   * @returns {number|null} ID группы или null
+   */
+  function getCurrentGroupId() {
+    return config.currentGroupId;
+  }
+
+  /**
+   * Сбросить настройки видимости к значениям по умолчанию
+   */
+  function resetColumnVisibility() {
+    config.columnVisibility = JSON.parse(JSON.stringify(DEFAULT_COLUMN_VISIBILITY));
+    console.log('Настройки видимости сброшены');
+  }
+
+  /**
+   * Получить базовые колонки
+   *
+   * @returns {Array} Массив кодов базовых колонок
+   */
+  function getBaseColumns() {
+    return BASE_COLUMNS.slice();
+  }
+
   // ========================================
   // ЭКСПОРТ ПУБЛИЧНОГО API
   // ========================================
@@ -76,6 +165,13 @@ var ConfigModule = (function() {
   return {
     getConfig: getConfig,
     getConfigValue: getConfigValue,
-    setConfigValue: setConfigValue
+    setConfigValue: setConfigValue,
+    getColumnVisibility: getColumnVisibility,
+    getColumnVisibilitySetting: getColumnVisibilitySetting,
+    setColumnVisibility: setColumnVisibility,
+    setCurrentGroupId: setCurrentGroupId,
+    getCurrentGroupId: getCurrentGroupId,
+    resetColumnVisibility: resetColumnVisibility,
+    getBaseColumns: getBaseColumns
   };
 })();

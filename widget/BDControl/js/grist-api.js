@@ -18,11 +18,17 @@ var GristApiModule = (function() {
   var deviceGroupsData = [];
   var devicesData = [];
   var systemParamsData = [];
+  var groupCharacteristicsData = [];
+  var characteristicsData = [];
+  var deviceCharacteristicsData = [];
   var dataReadyCallback = null;
   var dataLoaded = {
     deviceGroups: false,
     devices: false,
-    systemParams: false
+    systemParams: false,
+    groupCharacteristics: false,
+    characteristics: false,
+    deviceCharacteristics: false
   };
   var onSystemChangeCallback = null;
 
@@ -115,8 +121,10 @@ var GristApiModule = (function() {
     console.log('Загрузка таблиц через docApi.fetchTable...');
 
     try {
-      // Загружаем все три таблицы параллельно
+      // Загружаем все таблицы параллельно
       // Имена таблиц должны точно совпадать с именами в Grist (чувствительно к регистру!)
+      // Обязательные таблицы: Device_groups, Device, SYSTEM
+      // Опциональные таблицы: Group_Characteristics, Characteristics, Device_characteristics
       var promises = [
         loadTableWithTransform('Device_groups', function(data) {
           deviceGroupsData = data;
@@ -132,11 +140,26 @@ var GristApiModule = (function() {
           systemParamsData = data;
           dataLoaded.systemParams = true;
           console.log('SYSTEM:', data.length, 'записей');
-        })
+        }),
+        loadTableWithTransform('Group_Characteristics', function(data) {
+          groupCharacteristicsData = data;
+          dataLoaded.groupCharacteristics = true;
+          console.log('Group_Characteristics:', data.length, 'записей');
+        }, false), // необязательная
+        loadTableWithTransform('Characteristics', function(data) {
+          characteristicsData = data;
+          dataLoaded.characteristics = true;
+          console.log('Characteristics:', data.length, 'записей');
+        }, false), // необязательная
+        loadTableWithTransform('Device_characteristics', function(data) {
+          deviceCharacteristicsData = data;
+          dataLoaded.deviceCharacteristics = true;
+          console.log('Device_characteristics:', data.length, 'записей');
+        }, false) // необязательная
       ];
 
       await Promise.all(promises);
-      
+
       console.log('Состояние загрузки:', dataLoaded);
       checkDataReady();
 
@@ -151,8 +174,9 @@ var GristApiModule = (function() {
    * Загрузить таблицу и преобразовать данные
    * @param {string} tableName - Имя таблицы
    * @param {Function} callback - Callback с преобразованными данными
+   * @param {boolean} required - Обязательная ли таблица (по умолчанию true)
    */
-  async function loadTableWithTransform(tableName, callback) {
+  async function loadTableWithTransform(tableName, callback, required) {
     try {
       console.log('[GristApi] Загрузка таблицы:', tableName);
       var data = await grist.docApi.fetchTable(tableName);
@@ -160,7 +184,11 @@ var GristApiModule = (function() {
       console.log('[GristApi] Таблица ' + tableName + ' загружена:', transformed.length + ' записей');
       callback(transformed);
     } catch (error) {
-      console.error('[GristApi] Ошибка загрузки таблицы ' + tableName + ':', error.message);
+      if (required !== false) {
+        console.error('[GristApi] Ошибка загрузки таблицы ' + tableName + ':', error.message);
+      } else {
+        console.warn('[GristApi] Таблица ' + tableName + ' не найдена или пуста:', error.message);
+      }
       callback([]);
     }
   }
@@ -207,6 +235,141 @@ var GristApiModule = (function() {
   }
 
   /**
+   * Получить данные Group_Characteristics
+   * @returns {Array} Массив записей
+   */
+  function getGroupCharacteristics() {
+    return groupCharacteristicsData;
+  }
+
+  /**
+   * Получить данные Characteristics
+   * @returns {Array} Массив характеристик
+   */
+  function getCharacteristics() {
+    return characteristicsData;
+  }
+
+  /**
+   * Получить данные Device_characteristics
+   * @returns {Array} Массив значений характеристик устройств
+   */
+  function getDeviceCharacteristics() {
+    return deviceCharacteristicsData;
+  }
+
+  /**
+   * Получить характеристики для конкретной группы устройств
+   * @param {number} groupId - ID группы устройств
+   * @returns {Array} Массив характеристик с настройками видимости
+   */
+  function getCharacteristicsForGroup(groupId) {
+    if (groupId === null || groupId === undefined) {
+      return [];
+    }
+
+    // Преобразуем groupId к числу для корректного сравнения
+    var groupIdNum = parseInt(groupId, 10);
+
+    // Фильтруем Group_Characteristics по group_id
+    var groupChars = groupCharacteristicsData.filter(function(gc) {
+      var gcGroupId = parseInt(gc.group_id, 10);
+      return gcGroupId === groupIdNum;
+    });
+
+    // Для каждой характеристики получаем подробную информацию
+    return groupChars.map(function(gc) {
+      var characteristic = characteristicsData.find(function(c) {
+        var cId = parseInt(c.id, 10);
+        var gcCharId = parseInt(gc.characteristic_id, 10);
+        return cId === gcCharId;
+      });
+
+      return {
+        id: gc.id,
+        characteristic_id: gc.characteristic_id,
+        group_id: gc.group_id,
+        code: characteristic ? characteristic.code : null,
+        name: characteristic ? characteristic.name : null,
+        data_type: characteristic ? characteristic.data_type : 'string',
+        unit: characteristic ? characteristic.unit : '',
+        is_visible: gc.is_visible !== false, // по умолчанию true
+        sort_order: gc.sort_order || 0
+      };
+    }).sort(function(a, b) {
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+  }
+
+  /**
+   * Получить значение характеристики для устройства
+   * @param {number} deviceId - ID устройства
+   * @param {number} characteristicId - ID характеристики
+   * @returns {*} Значение характеристики или null
+   */
+  function getCharacteristicValue(deviceId, characteristicId) {
+    // Преобразуем к числам для корректного сравнения
+    var deviceIdNum = parseInt(deviceId, 10);
+    var characteristicIdNum = parseInt(characteristicId, 10);
+
+    var deviceChar = deviceCharacteristicsData.find(function(dc) {
+      var dcDeviceId = parseInt(dc.device_id, 10);
+      var dcCharId = parseInt(dc.characteristic_id, 10);
+      return dcDeviceId === deviceIdNum && dcCharId === characteristicIdNum;
+    });
+
+    if (!deviceChar) return null;
+
+    // Получаем тип данных характеристики из Characteristics
+    var characteristic = characteristicsData.find(function(c) {
+      return parseInt(c.id, 10) === characteristicIdNum;
+    });
+    
+    var dataType = characteristic ? characteristic.data_type : null;
+
+    // Возвращаем значение в зависимости от data_type
+    if (dataType === 'float') {
+      return deviceChar.value_float !== undefined && deviceChar.value_float !== null 
+        ? deviceChar.value_float 
+        : null;
+    }
+    
+    if (dataType === 'integer') {
+      return deviceChar.value_int !== undefined && deviceChar.value_int !== null 
+        ? deviceChar.value_int 
+        : null;
+    }
+    
+    if (dataType === 'string') {
+      return deviceChar.value_string !== undefined && deviceChar.value_string !== null && deviceChar.value_string !== ''
+        ? deviceChar.value_string 
+        : null;
+    }
+    
+    if (dataType === 'bool' || dataType === 'boolean') {
+      return deviceChar.value_bool !== undefined && deviceChar.value_bool !== null 
+        ? deviceChar.value_bool 
+        : null;
+    }
+
+    // Если data_type не указан, пробуем угадать по приоритету
+    if (deviceChar.value_string !== undefined && deviceChar.value_string !== null && deviceChar.value_string !== '') {
+      return deviceChar.value_string;
+    }
+    if (deviceChar.value_float !== undefined && deviceChar.value_float !== null) {
+      return deviceChar.value_float;
+    }
+    if (deviceChar.value_int !== undefined && deviceChar.value_int !== null) {
+      return deviceChar.value_int;
+    }
+    if (deviceChar.value_bool !== undefined && deviceChar.value_bool !== null) {
+      return deviceChar.value_bool;
+    }
+
+    return null;
+  }
+
+  /**
    * Получить значение параметра из таблицы SYSTEM
    * @param {Array} systemRecords - Записи таблицы SYSTEM
    * @param {string} paramName - Имя параметра
@@ -238,6 +401,11 @@ var GristApiModule = (function() {
     setOnSystemChangeCallback: function(callback) {
       onSystemChangeCallback = callback;
     },
-    loadSystemTable: loadSystemTable
+    loadSystemTable: loadSystemTable,
+    getGroupCharacteristics: getGroupCharacteristics,
+    getCharacteristics: getCharacteristics,
+    getDeviceCharacteristics: getDeviceCharacteristics,
+    getCharacteristicsForGroup: getCharacteristicsForGroup,
+    getCharacteristicValue: getCharacteristicValue
   };
 })();

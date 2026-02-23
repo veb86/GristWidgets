@@ -273,3 +273,63 @@
  * Running on http://127.0.0.1:5000
  * Running on http://192.168.0.10:5000
 2026-02-23 09:49:45,232 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 10:52:06,453 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 10:52:06,453 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 10:52:07,317 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 10:52:07,317 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 15:40:35,456 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 15:40:35,457 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 15:40:36,317 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 15:40:36,317 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 16:19:43,823 - werkzeug - INFO - 192.168.0.1 - - [23/Feb/2026 16:19:43] "[33mGET /webman/pingpong.cgi?action=cors HTTP/1.1[0m" 404 -
+2026-02-23 16:19:44,337 - werkzeug - INFO - 192.168.0.1 - - [23/Feb/2026 16:19:44] "[33mGET /webman/pingpong.cgi?action=cors HTTP/1.1[0m" 404 -
+2026-02-23 16:38:01,457 - werkzeug - INFO - 192.168.0.1 - - [23/Feb/2026 16:38:01] "[33mGET /v2/ HTTP/1.1[0m" 404 -
+2026-02-23 17:58:56,775 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 17:58:56,776 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 17:58:57,631 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 17:58:57,632 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 18:11:41,981 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 18:11:41,982 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 18:11:42,828 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 18:11:42,828 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 18:38:46,912 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 18:38:46,913 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 18:38:47,762 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 18:38:47,762 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 22:28:22,324 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 22:28:22,325 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 22:28:23,176 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 22:28:23,176 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 23:04:58,910 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 23:04:58,911 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 23:04:59,771 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 23:04:59,772 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-02-23 23:08:14,932 - werkzeug - INFO - 192.168.0.1 - - [23/Feb/2026 23:08:14] "[33mGET / HTTP/1.0[0m" 404 -
+2026-02-23 23:16:29,714 - __main__ - INFO - Конфигурация: ZCAD=127.0.0.1:7777
+2026-02-23 23:16:29,715 - __main__ - INFO - Запуск Flask сервера на 0.0.0.0:5000 (debug=False)
+2026-02-23 23:16:30,569 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.10:5000
+2026-02-23 23:16:30,570 - werkzeug - INFO - [33mPress CTRL+C to quit[0m

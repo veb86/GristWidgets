@@ -1,7 +1,7 @@
 /**
  * Модуль для работы с пользовательским интерфейсом
  *
- * Этот модуль отвечает за отображение данных в виде таблицы,
+ * Этот модуль отвечает за отображение данных в виде таблицы Tabulator,
  * обработку событий и взаимодействие с пользователем.
  *
  * @module UIModule
@@ -18,6 +18,8 @@ var UIModule = (function(GristApiModule, ConfigModule) {
   var currentGroupName = null;
   var deviceGroups = [];
   var devices = [];
+  var tabulatorInstance = null;
+  var currentCharacteristics = []; // Характеристики текущей группы
 
   // ========================================
   // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -88,42 +90,134 @@ var UIModule = (function(GristApiModule, ConfigModule) {
   }
 
   /**
-   * Сортировать устройства
+   * Подготовить данные для Tabulator
    * @param {Array} devicesArray - Массив устройств
-   * @returns {Array} Отсортированный массив
+   * @returns {Array} Подготовленные данные
    */
-  function sortDevices(devicesArray) {
-    var sortField = ConfigModule.getConfigValue('sortField');
-    var sortDirection = ConfigModule.getConfigValue('sortDirection');
+  function prepareDataForTabulator(devicesArray) {
+    return devicesArray.map(function(device, index) {
+      var group = deviceGroups.find(function(g) { return g.id === device.devgroup_id; });
+      var preparedData = {
+        id: device.id,
+        name: device.name || '',
+        brand: device.brand || '',
+        factoryname: device.factoryname || '',
+        unit: device.unit || '',
+        count: device.count || '',
+        note: device.note || '',
+        gristHelper_Display2: device.gristHelper_Display2 || (group ? group.name : ''),
+        _manualSort: group ? (group.manualSort || 0) : 0
+      };
 
-    return devicesArray.sort(function(a, b) {
-      // Особая обработка для manualSort (группы)
-      if (sortField === 'manualSort') {
-        var groupA = deviceGroups.find(function(g) { return g.id === a.devgroup_id; });
-        var groupB = deviceGroups.find(function(g) { return g.id === b.devgroup_id; });
-        var sortA = groupA ? (groupA.manualSort || 0) : 0;
-        var sortB = groupB ? (groupB.manualSort || 0) : 0;
-        return sortDirection === 'asc' ? sortA - sortB : sortB - sortA;
+      // Добавляем значения характеристик для текущей группы
+      currentCharacteristics.forEach(function(char) {
+        var value = GristApiModule.getCharacteristicValue(device.id, char.characteristic_id);
+        preparedData['char_' + char.code] = value !== null ? value : '';
+      });
+
+      return preparedData;
+    });
+  }
+
+  /**
+   * Получить колонки для Tabulator
+   * @returns {Array} Конфигурация колонок
+   */
+  function getTabulatorColumns() {
+    var currentField = ConfigModule.getConfigValue('sortField');
+    var currentDirection = ConfigModule.getConfigValue('sortDirection');
+    var columnVisibility = ConfigModule.getColumnVisibility();
+    var baseColumns = ConfigModule.getBaseColumns();
+
+    var columns = [];
+
+    // Добавляем базовые колонки
+    baseColumns.forEach(function(colCode) {
+      var colConfig = columnVisibility[colCode];
+      if (colConfig && colConfig.visible !== false) {
+        columns.push({
+          title: colConfig.title || colCode,
+          field: colCode,
+          headerSort: true,
+          width: colConfig.width,
+          widthGrow: colConfig.widthGrow,
+          cssClass: colCode === 'name' ? 'tabulator-cell-nowrap' : undefined
+        });
+      }
+    });
+
+    // Добавляем колонки характеристик для текущей группы
+    currentCharacteristics.forEach(function(char) {
+      var colConfig = columnVisibility[char.code];
+      if (colConfig && colConfig.visible !== false) {
+        columns.push({
+          title: char.name + (char.unit ? ' (' + char.unit + ')' : ''),
+          field: 'char_' + char.code,
+          headerSort: true,
+          width: colConfig.width || 120,
+          cssClass: 'tabulator-cell-nowrap'
+        });
+      }
+    });
+
+    return columns;
+  }
+
+  /**
+   * Обработчик изменения сортировки в Tabulator
+   * @param {Array} sorters - Массив сортировок
+   */
+  function handleTabulatorSort(sorters) {
+    if (sorters && sorters.length > 0) {
+      var sorter = sorters[0];
+      var field = sorter.field;
+      var direction = sorter.dir === 'asc' ? 'asc' : 'desc';
+
+      // Особая обработка для manualSort
+      if (field === '_manualSort') {
+        field = 'manualSort';
       }
 
-      var valA = a[sortField] || '';
-      var valB = b[sortField] || '';
+      ConfigModule.setConfigValue('sortField', field);
+      ConfigModule.setConfigValue('sortDirection', direction);
+    }
+  }
 
-      // Числовое сравнение
-      var numA = parseFloat(valA);
-      var numB = parseFloat(valB);
+  /**
+   * Инициализировать Tabulator
+   */
+  function initializeTabulator() {
+    if (tabulatorInstance) {
+      tabulatorInstance.destroy();
+    }
 
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return sortDirection === 'asc' ? numA - numB : numB - numA;
+    var currentField = ConfigModule.getConfigValue('sortField');
+    var currentDirection = ConfigModule.getConfigValue('sortDirection');
+
+    // Преобразуем поле сортировки для Tabulator
+    var initialSortField = currentField === 'manualSort' ? '_manualSort' : currentField;
+    var initialSortDir = currentDirection;
+
+    tabulatorInstance = new Tabulator('#devices-table', {
+      data: [],
+      columns: getTabulatorColumns(),
+      layout: 'fitColumns',
+      height: '100%',
+      placeholder: 'Нет данных',
+      initialSort: [
+        { column: initialSortField, dir: initialSortDir }
+      ],
+      columnHeaderVertAlign: 'middle',
+      cssClass: 'bdcontrol-tabulator',
+      columnDefaults: {
+        headerSortStartingDir: 'asc',
+        headerFilter: false
       }
+    });
 
-      // Строковое сравнение
-      valA = String(valA).toLowerCase();
-      valB = String(valB).toLowerCase();
-
-      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
+    // Подписка на событие сортировки
+    tabulatorInstance.on('dataSorting', function(sorters) {
+      handleTabulatorSort(sorters);
     });
   }
 
@@ -135,36 +229,9 @@ var UIModule = (function(GristApiModule, ConfigModule) {
    * Инициализировать пользовательский интерфейс
    */
   function initializeUI() {
-    // Обработчик клика по заголовку таблицы (сортировка)
-    var tableHeader = document.querySelector('.devices-table thead');
-    if (tableHeader) {
-      tableHeader.addEventListener('click', handleSort);
-    }
-  }
-
-  /**
-   * Обработчик клика по заголовку таблицы
-   * @param {Event} event
-   */
-  function handleSort(event) {
-    var th = event.target.closest('th[data-sort]');
-    if (!th) return;
-
-    var field = th.dataset.sort;
-    var currentField = ConfigModule.getConfigValue('sortField');
-    var currentDirection = ConfigModule.getConfigValue('sortDirection');
-
-    // Переключаем направление
-    if (currentField === field) {
-      ConfigModule.setConfigValue('sortField', field);
-      ConfigModule.setConfigValue('sortDirection', currentDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      ConfigModule.setConfigValue('sortField', field);
-      ConfigModule.setConfigValue('sortDirection', 'asc');
-    }
-
-    // Перерисовать таблицу
-    render();
+    // НЕ инициализируем Tabulator здесь - сделаем это при первой отрисовке
+    // когда данные уже загружены
+    console.log('UI инициализирован (Tabulator будет создан при отрисовке)');
   }
 
   /**
@@ -184,12 +251,22 @@ var UIModule = (function(GristApiModule, ConfigModule) {
   }
 
   /**
+   * Установить характеристики текущей группы
+   * @param {Array} chars - Массив характеристик
+   */
+  function setCharacteristics(chars) {
+    currentCharacteristics = chars;
+  }
+
+  /**
    * Установить выбранную группу
    * @param {number} groupId - ID группы
    */
   function setSelectedGroupId(groupId) {
     currentGroupId = groupId !== null && groupId !== undefined ? parseInt(groupId, 10) : null;
     currentGroupName = currentGroupId ? getGroupNameById(currentGroupId) : null;
+    // Сохраняем текущую группу в конфигурацию
+    ConfigModule.setCurrentGroupId(currentGroupId);
   }
 
   /**
@@ -254,7 +331,11 @@ var UIModule = (function(GristApiModule, ConfigModule) {
     // Проверка: выбрана ли группа
     if (currentGroupId === null || currentGroupId === undefined) {
       updateHeader();
-      clearTableBody();
+      // Инициализируем Tabulator если ещё не инициализирован
+      if (!tabulatorInstance) {
+        initializeTabulator();
+      }
+      tabulatorInstance.setData([]);
       showMessage('Группа не выбрана', 'warning');
       return;
     }
@@ -262,7 +343,11 @@ var UIModule = (function(GristApiModule, ConfigModule) {
     // Проверка: существует ли группа
     if (!currentGroupName) {
       updateHeader();
-      clearTableBody();
+      // Инициализируем Tabulator если ещё не инициализирован
+      if (!tabulatorInstance) {
+        initializeTabulator();
+      }
+      tabulatorInstance.setData([]);
       showMessage('Выбранная группа не найдена', 'error');
       return;
     }
@@ -274,52 +359,76 @@ var UIModule = (function(GristApiModule, ConfigModule) {
 
     // Проверка: есть ли устройства
     if (filteredDevices.length === 0) {
-      clearTableBody();
+      // Инициализируем Tabulator если ещё не инициализирован
+      if (!tabulatorInstance) {
+        initializeTabulator();
+      }
+      tabulatorInstance.setData([]);
       showMessage('В данной группе нет устройств', 'info');
       return;
     }
 
-    // Сортируем устройства
-    var sortedDevices = sortDevices(filteredDevices);
+    // Подготавливаем и сортируем данные
+    var preparedData = prepareDataForTabulator(filteredDevices);
+    var sortedData = sortDevices(preparedData);
 
-    // Отрисовка таблицы
-    renderTableBody(sortedDevices);
-  }
-
-  /**
-   * Очистить тело таблицы
-   */
-  function clearTableBody() {
-    var tbody = document.getElementById('devices-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
+    // Отрисовка таблицы через Tabulator
+    // ЛЕНИВАЯ ИНИЦИАЛИЗАЦИЯ: создаём Tabulator только когда данные готовы
+    if (!tabulatorInstance) {
+      initializeTabulator();
     }
+    
+    // ВАЖНО: Пересоздаём колонки для текущей группы
+    var columns = getTabulatorColumns();
+    tabulatorInstance.setColumns(columns);
+    tabulatorInstance.setData(sortedData);
   }
 
   /**
-   * Отрисовать тело таблицы
+   * Сортировать устройства
    * @param {Array} devicesArray - Массив устройств
+   * @returns {Array} Отсортированный массив
    */
-  function renderTableBody(devicesArray) {
-    var tbody = document.getElementById('devices-tbody');
-    if (!tbody) return;
+  function sortDevices(devicesArray) {
+    var sortField = ConfigModule.getConfigValue('sortField');
+    var sortDirection = ConfigModule.getConfigValue('sortDirection');
 
-    var rows = devicesArray.map(function(device) {
-      var group = deviceGroups.find(function(g) { return g.id === device.devgroup_id; });
-      var groupName = device.gristHelper_Display2 || (group ? group.name : '');
+    return devicesArray.sort(function(a, b) {
+      // Особая обработка для manualSort (группы)
+      if (sortField === 'manualSort') {
+        var sortA = a._manualSort || 0;
+        var sortB = b._manualSort || 0;
+        return sortDirection === 'asc' ? sortA - sortB : sortB - sortA;
+      }
 
-      return '<tr>' +
-        '<td>' + escapeHtml(device.name) + '</td>' +
-        '<td>' + escapeHtml(device.brand) + '</td>' +
-        '<td>' + escapeHtml(device.factoryname) + '</td>' +
-        '<td>' + escapeHtml(device.unit || '') + '</td>' +
-        '<td>' + escapeHtml(device.count || '') + '</td>' +
-        '<td>' + escapeHtml(device.note || '') + '</td>' +
-        '<td>' + escapeHtml(groupName) + '</td>' +
-      '</tr>';
-    }).join('');
+      var valA = a[sortField] || '';
+      var valB = b[sortField] || '';
 
-    tbody.innerHTML = rows;
+      // Числовое сравнение
+      var numA = parseFloat(valA);
+      var numB = parseFloat(valB);
+
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return sortDirection === 'asc' ? numA - numB : numB - numA;
+      }
+
+      // Строковое сравнение
+      valA = String(valA).toLowerCase();
+      valB = String(valB).toLowerCase();
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  /**
+   * Обновить данные и перерисовать таблицу
+   * @param {Array} newDevices - Новые данные устройств
+   */
+  function updateData(newDevices) {
+    devices = newDevices;
+    render();
   }
 
   // ========================================
@@ -330,12 +439,15 @@ var UIModule = (function(GristApiModule, ConfigModule) {
     initializeUI: initializeUI,
     setDeviceGroups: setDeviceGroups,
     setDevices: setDevices,
+    setCharacteristics: setCharacteristics,
     setSelectedGroupId: setSelectedGroupId,
     showMessage: showMessage,
     hideMessage: hideMessage,
     updateHeader: updateHeader,
     render: render,
-    clearTableBody: clearTableBody,
-    renderTableBody: renderTableBody
+    updateData: updateData,
+    getTabulatorInstance: function() {
+      return tabulatorInstance;
+    }
   };
 })(GristApiModule, ConfigModule);

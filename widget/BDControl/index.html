@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BDControl Widget</title>
+  <!-- Tabulator CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css">
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -15,28 +17,14 @@
 
     <div id="message-container"></div>
 
-    <div class="table-container">
-      <table id="devices-table" class="devices-table">
-        <thead>
-          <tr>
-            <th data-sort="name">Наименование</th>
-            <th data-sort="brand">Модель</th>
-            <th data-sort="factoryname">Производитель</th>
-            <th data-sort="unit">Ед. изм.</th>
-            <th data-sort="count">Количество</th>
-            <th data-sort="note">Примечание</th>
-            <th data-sort="gristHelper_Display2">Группа</th>
-          </tr>
-        </thead>
-        <tbody id="devices-tbody">
-          <!-- Данные будут загружены динамически -->
-        </tbody>
-      </table>
-    </div>
+    <div id="devices-table"></div>
   </div>
 
   <!-- Load Grist widget API -->
   <script src="./grist-plugin-api.js"></script>
+
+  <!-- Tabulator JS -->
+  <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
 
   <!-- Application modules -->
   <script src="./js/config.js"></script>

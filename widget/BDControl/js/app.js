@@ -33,14 +33,17 @@ var AppModule = (function(UIModule, GristApiModule, ConfigModule) {
     var selectedGroupId = GristApiModule.getSystemParamValue(systemParams, 'selectedGroupID');
     UIModule.setSelectedGroupId(selectedGroupId);
 
-    // Отрисовываем
-    UIModule.render();
+    // Загружаем характеристики для выбранной группы ПЕРЕД отрисовкой
+    updateCharacteristicsForGroup(selectedGroupId);
 
     console.log('BDControl Widget загружен:', {
       groups: deviceGroups.length,
       devices: devices.length,
       selectedGroupId: selectedGroupId
     });
+
+    // Отрисовываем ПОСЛЕ загрузки характеристик
+    UIModule.render();
   }
 
   /**
@@ -48,17 +51,39 @@ var AppModule = (function(UIModule, GristApiModule, ConfigModule) {
    */
   function onSystemChange(systemParams) {
     console.log('SYSTEM изменена:', systemParams);
-    
+
     // Получаем новый selectedGroupID
     var selectedGroupId = GristApiModule.getSystemParamValue(systemParams, 'selectedGroupID');
-    
+
     console.log('Новый selectedGroupID:', selectedGroupId);
-    
+
     // Обновляем выбранный ID
     UIModule.setSelectedGroupId(selectedGroupId);
-    
+
+    // Загружаем характеристики для новой группы
+    updateCharacteristicsForGroup(selectedGroupId);
+
     // Перерисовываем виджет
     UIModule.render();
+  }
+
+  /**
+   * Обновить характеристики для текущей группы
+   * @param {number} groupId - ID группы
+   */
+  function updateCharacteristicsForGroup(groupId) {
+    console.log('[App] updateCharacteristicsForGroup, groupId:', groupId);
+    
+    if (!groupId) {
+      console.log('[App] groupId не указан, очищаем характеристики');
+      UIModule.setCharacteristics([]);
+      return;
+    }
+
+    var characteristics = GristApiModule.getCharacteristicsForGroup(groupId);
+    console.log('[App] Характеристики для группы ' + groupId + ':', characteristics);
+    console.log('[App] Количество характеристик:', characteristics.length);
+    UIModule.setCharacteristics(characteristics);
   }
 
   // ========================================

@@ -1,0 +1,7 @@
+"id","manualSort","parent_id","code","name"
+1,1,0,lighting,Светотехнические устройства
+2,2,0,protection,Аппараты защиты
+3,3,0,cables,Кабели
+4,4,1,luminaires,Светильники
+5,5,1,lamps,Лампы
+6,6,2,breakers,Автоматические выключатели

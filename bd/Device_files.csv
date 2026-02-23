@@ -1,0 +1,6 @@
+"id","manualSort","device_id","file_type","role","title","file_path","mime_type","gristHelper_Display2"
+1,1,1,image,photo,Фото светильника,./data/devices/1/photo.jpg,image/jpeg,"LP-40-4000K"
+2,2,1,pdf,datasheet,Паспорт изделия,./data/devices/1/passport.pdf,application/pdf,"LP-40-4000K"
+3,3,1,image,scheme,Габаритные размеры,./data/devices/1/dimensions.png,image/png,"LP-40-4000K"
+4,4,2,image,photo,Фото светильника,./data/devices/2/photo.jpg,image/jpeg,"дрла"
+5,5,0,"","","","","",""

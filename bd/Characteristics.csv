@@ -1,0 +1,5 @@
+"id","manualSort","group_id","code","name","data_type","unit","gristHelper_Display"
+1,1,1,power,Мощность,float,Вт,"Электрические"
+2,2,1,voltage,Напряжение питания,string,В,"Электрические"
+3,3,2,luminous_flux,Световой поток,integer,лм,"Светотехнические"
+4,4,2,color_temperature,Температура,integer,К,"Светотехнические"

@@ -129,14 +129,8 @@
         <div class="table-container">
           <table id="devices-table" class="devices-table">
             <thead>
-              <tr>
-                <th data-sort="name">Наименование</th>
-                <th data-sort="brand">Модель</th>
-                <th data-sort="factoryname">Производитель</th>
-                <th data-sort="unit">Ед. изм.</th>
-                <th data-sort="count">Количество</th>
-                <th data-sort="note">Примечание</th>
-                <th data-sort="gristHelper_Display2">Группа</th>
+              <tr id="devices-thead-tr">
+                <!-- Заголовки будут сгенерированы динамически -->
               </tr>
             </thead>
             <tbody id="devices-tbody"></tbody>
@@ -159,6 +153,21 @@
     <div class="data-preview">
       <h3>📊 SYSTEM</h3>
       <pre id="system-preview"></pre>
+    </div>
+
+    <div class="data-preview">
+      <h3>📊 Characteristics</h3>
+      <pre id="characteristics-preview"></pre>
+    </div>
+
+    <div class="data-preview">
+      <h3>📊 Group_Characteristics</h3>
+      <pre id="groupCharacteristics-preview"></pre>
+    </div>
+
+    <div class="data-preview">
+      <h3>📊 Device_characteristics</h3>
+      <pre id="deviceCharacteristics-preview"></pre>
     </div>
   </div>
 
@@ -185,6 +194,36 @@
       ],
       SYSTEM: [
         { id: 1, param: 'selectedGroupID', value: '1' }
+      ],
+      Characteristics: [
+        { id: 1, manualSort: 1, group_id: 1, code: 'power', name: 'Мощность', data_type: 'float', unit: 'Вт' },
+        { id: 2, manualSort: 2, group_id: 1, code: 'voltage', name: 'Напряжение питания', data_type: 'string', unit: 'В' },
+        { id: 3, manualSort: 3, group_id: 2, code: 'luminous_flux', name: 'Световой поток', data_type: 'integer', unit: 'лм' },
+        { id: 4, manualSort: 4, group_id: 2, code: 'color_temperature', name: 'Температура', data_type: 'integer', unit: 'К' }
+      ],
+      Group_Characteristics: [
+        { id: 1, manualSort: 1, group_id: 4, characteristic_id: 1, is_visible: true, sort_order: 1 },
+        { id: 2, manualSort: 2, group_id: 4, characteristic_id: 2, is_visible: true, sort_order: 2 },
+        { id: 3, manualSort: 3, group_id: 4, characteristic_id: 3, is_visible: true, sort_order: 3 },
+        { id: 4, manualSort: 4, group_id: 4, characteristic_id: 4, is_visible: true, sort_order: 4 },
+        { id: 5, manualSort: 5, group_id: 5, characteristic_id: 1, is_visible: true, sort_order: 1 },
+        { id: 6, manualSort: 6, group_id: 5, characteristic_id: 3, is_visible: true, sort_order: 2 },
+        { id: 7, manualSort: 7, group_id: 5, characteristic_id: 4, is_visible: true, sort_order: 3 }
+      ],
+      Device_characteristics: [
+        { id: 1, manualSort: 1, device_id: 1, characteristic_id: 1, value_float: 40, value_int: 0, value_string: '', value_bool: 0 },
+        { id: 2, manualSort: 2, device_id: 1, characteristic_id: 2, value_float: 0, value_int: 0, value_string: '220', value_bool: 0 },
+        { id: 3, manualSort: 3, device_id: 1, characteristic_id: 3, value_float: 0, value_int: 4200, value_string: '', value_bool: 0 },
+        { id: 4, manualSort: 4, device_id: 1, characteristic_id: 4, value_float: 0, value_int: 4000, value_string: '', value_bool: 0 },
+        { id: 5, manualSort: 5, device_id: 2, characteristic_id: 1, value_float: 36, value_int: 0, value_string: '', value_bool: 0 },
+        { id: 6, manualSort: 6, device_id: 2, characteristic_id: 2, value_float: 0, value_int: 0, value_string: '220', value_bool: 0 },
+        { id: 7, manualSort: 7, device_id: 2, characteristic_id: 3, value_float: 0, value_int: 3800, value_string: '', value_bool: 0 },
+        { id: 8, manualSort: 8, device_id: 2, characteristic_id: 4, value_float: 0, value_int: 4000, value_string: '', value_bool: 0 },
+        { id: 9, manualSort: 9, device_id: 3, characteristic_id: 1, value_float: 60, value_int: 0, value_string: '', value_bool: 0 },
+        { id: 10, manualSort: 10, device_id: 3, characteristic_id: 3, value_float: 0, value_int: 800, value_string: '', value_bool: 0 },
+        { id: 11, manualSort: 11, device_id: 4, characteristic_id: 1, value_float: 10, value_int: 0, value_string: '', value_bool: 0 },
+        { id: 12, manualSort: 12, device_id: 4, characteristic_id: 3, value_float: 0, value_int: 900, value_string: '', value_bool: 0 },
+        { id: 13, manualSort: 13, device_id: 4, characteristic_id: 4, value_float: 0, value_int: 2700, value_string: '', value_bool: 0 }
       ]
     };
 
@@ -193,6 +232,9 @@
       deviceGroups: testData.device_groups.slice(),
       devices: testData.device.slice(),
       systemParams: testData.SYSTEM.slice(),
+      characteristics: testData.Characteristics.slice(),
+      groupCharacteristics: testData.Group_Characteristics.slice(),
+      deviceCharacteristics: testData.Device_characteristics.slice(),
       selectedGroupId: 1,
       sortField: 'manualSort',
       sortDirection: 'asc'
@@ -210,7 +252,10 @@
       devicesInfo: document.getElementById('devices-info'),
       groupsPreview: document.getElementById('groups-preview'),
       devicesPreview: document.getElementById('devices-preview'),
-      systemPreview: document.getElementById('system-preview')
+      systemPreview: document.getElementById('system-preview'),
+      characteristicsPreview: document.getElementById('characteristics-preview'),
+      groupCharacteristicsPreview: document.getElementById('groupCharacteristics-preview'),
+      deviceCharacteristicsPreview: document.getElementById('deviceCharacteristics-preview')
     };
 
     // Инициализация
@@ -235,6 +280,9 @@
       elements.groupsPreview.textContent = JSON.stringify(state.deviceGroups, null, 2);
       elements.devicesPreview.textContent = JSON.stringify(state.devices, null, 2);
       elements.systemPreview.textContent = JSON.stringify(state.systemParams, null, 2);
+      elements.characteristicsPreview.textContent = JSON.stringify(state.characteristics, null, 2);
+      elements.groupCharacteristicsPreview.textContent = JSON.stringify(state.groupCharacteristics, null, 2);
+      elements.deviceCharacteristicsPreview.textContent = JSON.stringify(state.deviceCharacteristics, null, 2);
     }
 
     // Обновление выбранной группы
@@ -273,6 +321,135 @@
       return state.devices.filter(function(device) {
         return groupIds.indexOf(device.devgroup_id) !== -1;
       });
+    }
+
+    // Получить характеристики для группы
+    function getCharacteristicsForGroup(groupId) {
+      if (groupId === null || groupId === undefined) return [];
+      
+      // Преобразуем к числу для корректного сравнения
+      var groupIdNum = parseInt(groupId, 10);
+      
+      // Фильтруем Group_Characteristics по group_id
+      var groupChars = state.groupCharacteristics.filter(function(gc) {
+        var gcGroupId = parseInt(gc.group_id, 10);
+        return gcGroupId === groupIdNum;
+      });
+
+      // Для каждой характеристики получаем подробную информацию
+      return groupChars.map(function(gc) {
+        var characteristic = state.characteristics.find(function(c) {
+          var cId = parseInt(c.id, 10);
+          var gcCharId = parseInt(gc.characteristic_id, 10);
+          return cId === gcCharId;
+        });
+
+        return {
+          id: gc.id,
+          characteristic_id: gc.characteristic_id,
+          group_id: gc.group_id,
+          code: characteristic ? characteristic.code : null,
+          name: characteristic ? characteristic.name : null,
+          data_type: characteristic ? characteristic.data_type : 'string',
+          unit: characteristic ? characteristic.unit : '',
+          is_visible: gc.is_visible !== false,
+          sort_order: gc.sort_order || 0
+        };
+      }).sort(function(a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+    }
+
+    // Получить значение характеристики для устройства
+    function getCharacteristicValue(deviceId, characteristicId) {
+      // Преобразуем к числам для корректного сравнения
+      var deviceIdNum = parseInt(deviceId, 10);
+      var characteristicIdNum = parseInt(characteristicId, 10);
+      
+      var deviceChar = state.deviceCharacteristics.find(function(dc) {
+        var dcDeviceId = parseInt(dc.device_id, 10);
+        var dcCharId = parseInt(dc.characteristic_id, 10);
+        return dcDeviceId === deviceIdNum && dcCharId === characteristicIdNum;
+      });
+
+      if (!deviceChar) return null;
+
+      // Получаем тип данных характеристики из Characteristics
+      var characteristic = state.characteristics.find(function(c) {
+        return parseInt(c.id, 10) === characteristicIdNum;
+      });
+      
+      var dataType = characteristic ? characteristic.data_type : null;
+
+      // Возвращаем значение в зависимости от data_type
+      if (dataType === 'float') {
+        return deviceChar.value_float !== undefined && deviceChar.value_float !== null 
+          ? deviceChar.value_float 
+          : null;
+      }
+      
+      if (dataType === 'integer') {
+        return deviceChar.value_int !== undefined && deviceChar.value_int !== null 
+          ? deviceChar.value_int 
+          : null;
+      }
+      
+      if (dataType === 'string') {
+        return deviceChar.value_string !== undefined && deviceChar.value_string !== null && deviceChar.value_string !== ''
+          ? deviceChar.value_string 
+          : null;
+      }
+      
+      if (dataType === 'bool' || dataType === 'boolean') {
+        return deviceChar.value_bool !== undefined && deviceChar.value_bool !== null 
+          ? deviceChar.value_bool 
+          : null;
+      }
+
+      // Если data_type не указан, пробуем угадать по приоритету
+      if (deviceChar.value_string !== undefined && deviceChar.value_string !== null && deviceChar.value_string !== '') {
+        return deviceChar.value_string;
+      }
+      if (deviceChar.value_float !== undefined && deviceChar.value_float !== null) {
+        return deviceChar.value_float;
+      }
+      if (deviceChar.value_int !== undefined && deviceChar.value_int !== null) {
+        return deviceChar.value_int;
+      }
+      if (deviceChar.value_bool !== undefined && deviceChar.value_bool !== null) {
+        return deviceChar.value_bool;
+      }
+
+      return null;
+    }
+
+    // Получить колонки для текущей группы
+    function getColumnsForGroup(groupId) {
+      // Базовые колонки
+      var columns = [
+        { key: 'name', title: 'Наименование' },
+        { key: 'brand', title: 'Модель' },
+        { key: 'factoryname', title: 'Производитель' },
+        { key: 'unit', title: 'Ед. изм.' },
+        { key: 'count', title: 'Количество' },
+        { key: 'note', title: 'Примечание' },
+        { key: 'gristHelper_Display2', title: 'Группа' }
+      ];
+
+      // Добавляем колонки характеристик
+      var characteristics = getCharacteristicsForGroup(groupId);
+      characteristics.forEach(function(char) {
+        if (char.is_visible) {
+          columns.push({
+            key: 'char_' + char.code,
+            title: char.name + (char.unit ? ' (' + char.unit + ')' : ''),
+            characteristic_id: char.characteristic_id,
+            code: char.code
+          });
+        }
+      });
+
+      return columns;
     }
 
     // Сортировка
@@ -349,6 +526,7 @@
         elements.groupName.textContent = 'Не выбрана';
         elements.devicesCount.textContent = '';
         elements.tableBody.innerHTML = '';
+        renderTableHeader(); // Очищаем заголовки
         showMessage('Группа не выбрана', 'warning');
         return;
       }
@@ -358,11 +536,16 @@
         elements.groupName.textContent = '#' + state.selectedGroupId + ' (не найдена)';
         elements.devicesCount.textContent = '';
         elements.tableBody.innerHTML = '';
+        renderTableHeader(); // Очищаем заголовки
         showMessage('Выбранная группа не найдена', 'error');
         return;
       }
 
       elements.groupName.textContent = groupName;
+      
+      // Отрисовываем заголовки таблицы для текущей группы
+      renderTableHeader();
+      
       var filteredDevices = getFilteredDevices();
       elements.devicesCount.textContent = '(' + filteredDevices.length + ' шт.)';
 
@@ -376,21 +559,47 @@
       renderTable(sortedDevices);
     }
 
+    // Отрисовка заголовков таблицы
+    function renderTableHeader() {
+      var theadTr = document.getElementById('devices-thead-tr');
+      if (!theadTr) return;
+
+      var columns = getColumnsForGroup(state.selectedGroupId);
+      var headers = columns.map(function(col) {
+        return '<th data-sort="' + col.key + '">' + escapeHtml(col.title) + '</th>';
+      }).join('');
+
+      theadTr.innerHTML = headers;
+    }
+
     // Отрисовка таблицы
     function renderTable(devicesArray) {
+      var columns = getColumnsForGroup(state.selectedGroupId);
+
       var rows = devicesArray.map(function(device) {
         var group = state.deviceGroups.find(function(g) { return g.id === device.devgroup_id; });
         var groupName = device.gristHelper_Display2 || (group ? group.name : '');
-        return '<tr>' +
-          '<td>' + escapeHtml(device.name) + '</td>' +
-          '<td>' + escapeHtml(device.brand) + '</td>' +
-          '<td>' + escapeHtml(device.factoryname) + '</td>' +
-          '<td>' + escapeHtml(device.unit || '') + '</td>' +
-          '<td>' + escapeHtml(device.count || '') + '</td>' +
-          '<td>' + escapeHtml(device.note || '') + '</td>' +
-          '<td>' + escapeHtml(groupName) + '</td>' +
-        '</tr>';
+
+        // Формируем ячейки для каждой колонки
+        var cells = columns.map(function(col) {
+          var value;
+
+          // Проверяем, является ли колонка характеристикой
+          if (col.code) {
+            // Это характеристика - получаем её значение
+            value = getCharacteristicValue(device.id, col.characteristic_id);
+            value = value !== null ? value : '';
+          } else {
+            // Это базовая колонка
+            value = device[col.key] || '';
+          }
+
+          return '<td>' + escapeHtml(value) + '</td>';
+        }).join('');
+
+        return '<tr>' + cells + '</tr>';
       }).join('');
+
       elements.tableBody.innerHTML = rows;
     }
 

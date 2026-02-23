@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BDControl - Отладка</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #3b82f6;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #666;
+      margin-top: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #3b82f6;
+      color: white;
+      font-weight: 500;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    tr:hover {
+      background: #e8f4ff;
+    }
+    .status {
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    .log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .btn-group {
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 BDControl - Отладка данных</h1>
+    
+    <div id="status-container"></div>
+    
+    <div class="btn-group">
+      <button class="btn" onclick="loadData()">🔄 Загрузить данные</button>
+      <button class="btn" onclick="testCharacteristics()">🧪 Тест характеристик</button>
+    </div>
+
+    <h2>📋 Логи</h2>
+    <div class="log" id="log-container"></div>
+
+    <h2>📊 Device_groups</h2>
+    <table id="device-groups-table">
+      <thead>
+        <tr><th>id</th><th>parent_id</th><th>code</th><th>name</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📊 Device</h2>
+    <table id="device-table">
+      <thead>
+        <tr><th>id</th><th>name</th><th>brand</th><th>devgroup_id</th><th>gristHelper_Display2</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📊 SYSTEM</h2>
+    <table id="system-table">
+      <thead>
+        <tr><th>id</th><th>param</th><th>value</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📊 Group_Characteristics</h2>
+    <table id="group-characteristics-table">
+      <thead>
+        <tr><th>id</th><th>group_id</th><th>characteristic_id</th><th>is_visible</th><th>sort_order</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📊 Characteristics</h2>
+    <table id="characteristics-table">
+      <thead>
+        <tr><th>id</th><th>code</th><th>name</th><th>data_type</th><th>unit</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📊 Device_characteristics</h2>
+    <table id="device-characteristics-table">
+      <thead>
+        <tr><th>id</th><th>device_id</th><th>characteristic_id</th><th>value_float</th><th>value_int</th><th>value_string</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    var logContainer = document.getElementById('log-container');
+    var logs = [];
+
+    function log(message, type) {
+      type = type || 'info';
+      var timestamp = new Date().toLocaleTimeString();
+      var logMessage = '[' + timestamp + '] ' + message;
+      logs.push(logMessage);
+      logContainer.textContent = logs.join('\n');
+      logContainer.scrollTop = logContainer.scrollHeight;
+      console.log(logMessage);
+    }
+
+    function showStatus(message, type) {
+      var container = document.getElementById('status-container');
+      container.innerHTML = '<div class="status status-' + type + '">' + message + '</div>';
+    }
+
+    function transformTableData(tableData) {
+      if (!tableData || !tableData.id || !Array.isArray(tableData.id)) {
+        return [];
+      }
+
+      var columns = Object.keys(tableData).filter(function(key) {
+        return key !== 'id';
+      });
+
+      var records = [];
+      for (var i = 0; i < tableData.id.length; i++) {
+        var record = { id: tableData.id[i] };
+        columns.forEach(function(col) {
+          record[col] = tableData[col][i];
+        });
+        records.push(record);
+      }
+
+      return records;
+    }
+
+    async function loadTable(tableName) {
+      try {
+        log('Загрузка таблицы: ' + tableName);
+        var data = await grist.docApi.fetchTable(tableName);
+        var transformed = transformTableData(data);
+        log('Таблица ' + tableName + ': ' + transformed.length + ' записей', 'success');
+        return transformed;
+      } catch (error) {
+        log('Ошибка загрузки ' + tableName + ': ' + error.message, 'error');
+        return [];
+      }
+    }
+
+    async function loadData() {
+      log('=== Начало загрузки данных ===');
+      showStatus('Загрузка данных...', 'warning');
+
+      try {
+        var deviceGroups = await loadTable('Device_groups');
+        var devices = await loadTable('Device');
+        var system = await loadTable('SYSTEM');
+        var groupCharacteristics = await loadTable('Group_Characteristics');
+        var characteristics = await loadTable('Characteristics');
+        var deviceCharacteristics = await loadTable('Device_characteristics');
+
+        renderTable('device-groups-table', deviceGroups, ['id', 'parent_id', 'code', 'name']);
+        renderTable('device-table', devices, ['id', 'name', 'brand', 'devgroup_id', 'gristHelper_Display2']);
+        renderTable('system-table', system, ['id', 'param', 'value']);
+        renderTable('group-characteristics-table', groupCharacteristics, ['id', 'group_id', 'characteristic_id', 'is_visible', 'sort_order']);
+        renderTable('characteristics-table', characteristics, ['id', 'code', 'name', 'data_type', 'unit']);
+        renderTable('device-characteristics-table', deviceCharacteristics, ['id', 'device_id', 'characteristic_id', 'value_float', 'value_int', 'value_string']);
+
+        showStatus('Данные успешно загружены!', 'success');
+        log('=== Загрузка завершена ===');
+
+        // Сохраняем данные для тестов
+        window.testData = {
+          deviceGroups: deviceGroups,
+          devices: devices,
+          system: system,
+          groupCharacteristics: groupCharacteristics,
+          characteristics: characteristics,
+          deviceCharacteristics: deviceCharacteristics
+        };
+
+      } catch (error) {
+        showStatus('Ошибка: ' + error.message, 'error');
+        log('Критическая ошибка: ' + error.message, 'error');
+      }
+    }
+
+    function renderTable(tableId, data, columns) {
+      var tbody = document.querySelector('#' + tableId + ' tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = data.map(function(row) {
+        return '<tr>' + columns.map(function(col) {
+          return '<td>' + (row[col] !== undefined ? row[col] : '') + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+    }
+
+    function getCharacteristicsForGroup(groupId) {
+      if (!window.testData) return [];
+
+      var groupChars = window.testData.groupCharacteristics.filter(function(gc) {
+        return gc.group_id === groupId;
+      });
+
+      return groupChars.map(function(gc) {
+        var characteristic = window.testData.characteristics.find(function(c) {
+          return c.id === gc.characteristic_id;
+        });
+
+        return {
+          id: gc.id,
+          characteristic_id: gc.characteristic_id,
+          group_id: gc.group_id,
+          code: characteristic ? characteristic.code : null,
+          name: characteristic ? characteristic.name : null,
+          data_type: characteristic ? characteristic.data_type : 'string',
+          unit: characteristic ? characteristic.unit : '',
+          is_visible: gc.is_visible !== false,
+          sort_order: gc.sort_order || 0
+        };
+      }).sort(function(a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+    }
+
+    function getCharacteristicValue(deviceId, characteristicId) {
+      if (!window.testData) return null;
+
+      var deviceChar = window.testData.deviceCharacteristics.find(function(dc) {
+        return dc.device_id === deviceId && dc.characteristic_id === characteristicId;
+      });
+
+      if (!deviceChar) return null;
+
+      if (deviceChar.value_float !== undefined && deviceChar.value_float !== null && deviceChar.value_float !== 0) {
+        return deviceChar.value_float;
+      }
+      if (deviceChar.value_int !== undefined && deviceChar.value_int !== null && deviceChar.value_int !== 0) {
+        return deviceChar.value_int;
+      }
+      if (deviceChar.value_string !== undefined && deviceChar.value_string !== null && deviceChar.value_string !== '') {
+        return deviceChar.value_string;
+      }
+      if (deviceChar.value_bool !== undefined && deviceChar.value_bool !== null) {
+        return deviceChar.value_bool;
+      }
+
+      return null;
+    }
+
+    function testCharacteristics() {
+      if (!window.testData) {
+        log('Сначала загрузите данные!', 'error');
+        return;
+      }
+
+      log('=== Тест характеристик ===');
+
+      // Тест для группы 4 (Светильники)
+      log('Группа 4 (Светильники):');
+      var chars4 = getCharacteristicsForGroup(4);
+      chars4.forEach(function(c) {
+        log('  - ' + c.name + ' (' + c.code + '), unit: ' + c.unit + ', visible: ' + c.is_visible);
+      });
+
+      // Тест для группы 5 (Лампы)
+      log('Группа 5 (Лампы):');
+      var chars5 = getCharacteristicsForGroup(5);
+      chars5.forEach(function(c) {
+        log('  - ' + c.name + ' (' + c.code + '), unit: ' + c.unit + ', visible: ' + c.is_visible);
+      });
+
+      // Тест значений для устройства 1
+      log('Устройство 1 - значения характеристик:');
+      chars4.forEach(function(c) {
+        var value = getCharacteristicValue(1, c.characteristic_id);
+        log('  ' + c.name + ': ' + value + ' ' + c.unit);
+      });
+
+      log('=== Тест завершён ===');
+    }
+
+    // Инициализация Grist
+    log('Инициализация Grist API...');
+    grist.ready({ requiredAccess: 'full' });
+    log('Grist API инициализирован', 'success');
+
+    // Автозагрузка через 500мс
+    setTimeout(loadData, 500);
+  </script>
+</body>
+</html>
