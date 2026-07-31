@@ -1,0 +1,14 @@
+{
+  "name": "BDView",
+  "description": "Динамический каталог устройств выбранной категории",
+  "version": "1.0.0",
+  "grist": {
+    "name": "BDView",
+    "url": "index.html",
+    "widgetId": "bdview",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full"
+  }
+}
