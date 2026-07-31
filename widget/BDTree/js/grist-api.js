@@ -98,10 +98,10 @@ var GristApiModule = (function() {
     try {
       // Загружаем все таблицы параллельно
       var promises = [
-        loadTableWithTransform('Device_groups', function(data) {
+        loadTableWithTransform('Categories', function(data) {
           deviceGroupsData = data;
           dataLoaded.deviceGroups = true;
-          console.log('Device_groups:', data.length, 'записей');
+          console.log('Categories:', data.length, 'записей');
         }),
         loadTableWithTransform('SYSTEM', function(data) {
           systemParamsData = data;
