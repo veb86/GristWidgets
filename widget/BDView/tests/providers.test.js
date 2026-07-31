@@ -23,7 +23,7 @@ test('recursively includes every descendant and terminates on cycles', () => {
   assert.deepEqual(CategoryTree.descendantIds(categories, '2'), [2, 20, 21]);
 });
 
-test('builds ordered schema-driven columns with live substring filters', () => {
+test('prepends permanent device columns to ordered schema-driven columns', () => {
   const links = [
     { category_id: 2, parameter_id: 4, manualSort: 3 },
     { category_id: 2, parameter_id: 1, manualSort: 1 },
@@ -37,6 +37,9 @@ test('builds ordered schema-driven columns with live substring filters', () => {
   const parameters = ColumnProvider.forCategory(links, definitions, 2);
   assert.deepEqual(parameters.map((item) => item.id), [1, 4]);
   assert.deepEqual(TableBuilder.columns(parameters), [
+    { title: 'Наименование', field: 'name', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
+    { title: 'Модель', field: 'model', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
+    { title: 'Производитель', field: 'manufacturer', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
     { title: 'Мощность, Вт', field: 'parameter_1', sorter: 'number', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
     { title: 'IP', field: 'parameter_4', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true }
   ]);
@@ -44,7 +47,9 @@ test('builds ordered schema-driven columns with live substring filters', () => {
 
 test('filters descendant devices and maps typed parameters in one pass', () => {
   const devices = DeviceProvider.forCategories([
-    { id: 10, categories_id: 2 }, { id: 11, categories_id: 20 }, { id: 12, categories_id: 99 }
+    { id: 10, categories_id: 2, name: 'Светильник', model: 'L-10', manufacturer: 'Завод 1' },
+    { id: 11, categories_id: 20, name: 'Автомат', model: null, manufacturer: 'Завод 2' },
+    { id: 12, categories_id: 99, name: 'Розетка', model: 'R-12', manufacturer: 'Завод 3' }
   ], [2, 20, 21]);
   const values = ParameterProvider.mapForDevices([
     { device_id: 10, parameter_id: 1, value_float: 10, value_int: 0, value_string: '' },
@@ -53,7 +58,7 @@ test('filters descendant devices and maps typed parameters in one pass', () => {
     { device_id: 12, parameter_id: 4, value_float: null, value_int: null, value_string: 'ignored' }
   ], devices.map((device) => device.id), [{ id: 1, dataType: 'float' }, { id: 4, dataType: 'string' }, { id: 5, dataType: 'int' }]);
   assert.deepEqual(TableBuilder.rows(devices, [{ id: 1 }, { id: 4 }, { id: 5 }], values), [
-    { id: 10, parameter_1: 10, parameter_4: 'IP54', parameter_5: '' },
-    { id: 11, parameter_1: '', parameter_4: '', parameter_5: 4000 }
+    { id: 10, name: 'Светильник', model: 'L-10', manufacturer: 'Завод 1', parameter_1: 10, parameter_4: 'IP54', parameter_5: '' },
+    { id: 11, name: 'Автомат', model: '', manufacturer: 'Завод 2', parameter_1: '', parameter_4: '', parameter_5: 4000 }
   ]);
 });
