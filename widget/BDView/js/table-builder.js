@@ -5,20 +5,35 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function(DataUtils) {
   'use strict';
 
+  var DEVICE_COLUMNS = [
+    { title: 'Наименование', field: 'name' },
+    { title: 'Модель', field: 'model' },
+    { title: 'Производитель', field: 'manufacturer' }
+  ];
+
   function field(parameterId) { return 'parameter_' + parameterId; }
 
+  function column(title, columnField, sorter) {
+    return {
+      title: title,
+      field: columnField,
+      sorter: sorter,
+      headerFilter: 'input',
+      headerFilterFunc: 'like',
+      headerFilterLiveFilter: true,
+      headerSort: true
+    };
+  }
+
   function columns(parameters) {
-    return (parameters || []).map(function(parameter) {
-      return {
-        title: parameter.name + (parameter.unit ? ', ' + parameter.unit : ''),
-        field: field(parameter.id),
-        sorter: parameter.dataType === 'float' || parameter.dataType === 'int' ? 'number' : 'string',
-        headerFilter: 'input',
-        headerFilterFunc: 'like',
-        headerFilterLiveFilter: true,
-        headerSort: true
-      };
+    var deviceColumns = DEVICE_COLUMNS.map(function(deviceColumn) {
+      return column(deviceColumn.title, deviceColumn.field, 'string');
     });
+    var parameterColumns = (parameters || []).map(function(parameter) {
+      var sorter = parameter.dataType === 'float' || parameter.dataType === 'int' ? 'number' : 'string';
+      return column(parameter.name + (parameter.unit ? ', ' + parameter.unit : ''), field(parameter.id), sorter);
+    });
+    return deviceColumns.concat(parameterColumns);
   }
 
   function rows(devices, parameters, valueMap) {
@@ -26,6 +41,10 @@
       var deviceId = DataUtils.normalizeId(device.id);
       var values = valueMap.get(deviceId) || new Map();
       var row = { id: deviceId };
+      DEVICE_COLUMNS.forEach(function(deviceColumn) {
+        var value = device[deviceColumn.field];
+        row[deviceColumn.field] = value === null || value === undefined ? '' : value;
+      });
       (parameters || []).forEach(function(parameter) {
         row[field(parameter.id)] = values.has(parameter.id) ? values.get(parameter.id) : '';
       });
