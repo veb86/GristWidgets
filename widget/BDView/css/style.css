@@ -6,10 +6,14 @@ body { color: #252525; font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe 
 .header h1 { font-size: 17px; margin: 0; }
 #summary { color: #666; margin-left: auto; white-space: nowrap; }
 #message { padding: 0 14px; }
-#message.info, #message.error { padding-bottom: 9px; padding-top: 9px; }
+#message.info, #message.success, #message.error { padding-bottom: 9px; padding-top: 9px; }
 #message.info { background: #f3f7fa; color: #456; }
+#message.success { background: #edf8ee; color: #27632b; }
 #message.error { background: #fff0f0; color: #a22; }
 #device-table { flex: 1; min-height: 0; }
 .tabulator { border: 0; font-size: 13px; }
 .tabulator .tabulator-header .tabulator-col .tabulator-col-content { padding: 7px; }
 .tabulator .tabulator-header-filter input { border: 1px solid #bbb; border-radius: 3px; padding: 4px 6px; }
+.add-device { align-items: center; background: #16a765; border: 0; border-radius: 50%; color: white; cursor: pointer; display: inline-flex; font-size: 18px; font-weight: 600; height: 26px; justify-content: center; line-height: 1; padding: 0 0 2px; width: 26px; }
+.add-device:hover { background: #128653; }
+.add-device:focus-visible { outline: 2px solid #126fc2; outline-offset: 2px; }

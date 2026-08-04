@@ -11,6 +11,28 @@
     { title: 'Производитель', field: 'manufacturer' }
   ];
 
+  function addButtonFormatter() {
+    return '<button type="button" class="add-device" aria-label="Добавить устройство" title="Добавить устройство">+</button>';
+  }
+
+  function actionColumn(onAdd) {
+    return {
+      title: '',
+      field: '_add',
+      formatter: addButtonFormatter,
+      width: 42,
+      minWidth: 42,
+      hozAlign: 'center',
+      headerSort: false,
+      resizable: false,
+      frozen: true,
+      cellClick: function(event, cell) {
+        event.stopPropagation();
+        onAdd(cell.getRow().getData().id);
+      }
+    };
+  }
+
   function field(parameterId) { return 'parameter_' + parameterId; }
 
   function column(title, columnField, sorter) {
@@ -25,7 +47,7 @@
     };
   }
 
-  function columns(parameters) {
+  function columns(parameters, onAdd) {
     var deviceColumns = DEVICE_COLUMNS.map(function(deviceColumn) {
       return column(deviceColumn.title, deviceColumn.field, 'string');
     });
@@ -33,7 +55,7 @@
       var sorter = parameter.dataType === 'float' || parameter.dataType === 'int' ? 'number' : 'string';
       return column(parameter.name + (parameter.unit ? ', ' + parameter.unit : ''), field(parameter.id), sorter);
     });
-    return deviceColumns.concat(parameterColumns);
+    return [actionColumn(onAdd)].concat(deviceColumns, parameterColumns);
   }
 
   function rows(devices, parameters, valueMap) {
@@ -52,5 +74,5 @@
     });
   }
 
-  return { columns: columns, rows: rows, field: field };
+  return { columns: columns, rows: rows, field: field, actionColumn: actionColumn };
 });
