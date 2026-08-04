@@ -8,7 +8,7 @@ body { color: #252525; font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe 
 #message { padding: 0 14px; }
 #message.info, #message.success, #message.error { padding-bottom: 9px; padding-top: 9px; }
 #message.info { background: #f3f7fa; color: #456; }
-#message.success { background: #edf8ee; color: #27632b; }
+#message.success { background: #edf8ee; color: #27632b; display:none;}
 #message.error { background: #fff0f0; color: #a22; }
 #device-table { flex: 1; min-height: 0; }
 .tabulator { border: 0; font-size: 13px; }
