@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>SelDevices Manager preview</title>
+</head>
+<body>
+  <script>
+    window.grist = {
+      docApi: {
+        fetchTable: async function() {
+          return {
+            id: [1, 2, 3],
+            dev_id: [['L', 101], ['L', 205], ['L', 317]],
+            quantity: [1, 4, 2],
+            name: ['Автоматический выключатель', 'Светильник LED', 'Розетка'],
+            note: ['Щит ЩР-1', 'Коридор', 'Кабинет 204']
+          };
+        },
+        applyUserActions: async function(actions) {
+          console.log('Grist actions:', actions);
+        }
+      },
+      ready: function() {},
+      onRecords: function() {}
+    };
+  </script>
+  <script>
+    fetch('../widget/SelDevManager/index.html')
+      .then(function(response) { return response.text(); })
+      .then(function(html) {
+        var base = '../widget/SelDevManager/';
+        html = html.replace('<script src="./grist-plugin-api.js"></' + 'script>', '');
+        html = html.replaceAll('href="./', 'href="' + base);
+        html = html.replaceAll('src="./', 'src="' + base);
+        document.open();
+        document.write(html);
+        document.close();
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SelDevices Manager</title>
+  <link rel="stylesheet" href="./css/tabulator.min.css">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <main class="widget">
+    <div class="toolbar">
+      <button id="clear-button" class="clear-button" type="button">Очистить полностью</button>
+    </div>
+    <div id="status" class="status" aria-live="polite"></div>
+    <div id="device-table"></div>
+  </main>
+
+  <dialog id="confirmation-dialog" class="confirmation-dialog">
+    <p data-dialog-message></p>
+    <div class="dialog-actions">
+      <button class="dialog-button dialog-button--yes" data-dialog-yes type="button">Да</button>
+      <button class="dialog-button dialog-button--no" data-dialog-no type="button">Нет</button>
+    </div>
+  </dialog>
+
+  <script src="./grist-plugin-api.js"></script>
+  <script src="./js/tabulator.min.js"></script>
+  <script src="./js/data-utils.js"></script>
+  <script src="./js/grist-api.js"></script>
+  <script src="./js/quantity-manager.js"></script>
+  <script src="./js/table-builder.js"></script>
+  <script src="./js/dialog.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

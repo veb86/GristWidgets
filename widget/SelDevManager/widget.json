@@ -1,0 +1,14 @@
+{
+  "name": "SelDevices Manager",
+  "description": "Управление выбранными устройствами в таблице SelDevices",
+  "version": "1.0.0",
+  "grist": {
+    "name": "SelDevices Manager",
+    "url": "index.html",
+    "widgetId": "seldevmanager",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full"
+  }
+}
