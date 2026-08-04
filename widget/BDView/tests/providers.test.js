@@ -4,6 +4,7 @@ const CategoryTree = require('../js/category-tree.js');
 const ColumnProvider = require('../js/column-provider.js');
 const DeviceProvider = require('../js/device-provider.js');
 const ParameterProvider = require('../js/parameter-provider.js');
+const SelectedDeviceWriter = require('../js/selected-device-writer.js');
 const TableBuilder = require('../js/table-builder.js');
 const SystemMonitor = require('../js/system-monitor.js');
 
@@ -36,7 +37,23 @@ test('prepends permanent device columns to ordered schema-driven columns', () =>
   ];
   const parameters = ColumnProvider.forCategory(links, definitions, 2);
   assert.deepEqual(parameters.map((item) => item.id), [1, 4]);
-  assert.deepEqual(TableBuilder.columns(parameters), [
+  const onAdd = () => {};
+  const columns = TableBuilder.columns(parameters, onAdd);
+  assert.equal(columns[0].field, '_add');
+  assert.equal(columns[0].title, '');
+  assert.equal(columns[0].headerSort, false);
+  assert.equal(columns[0].frozen, true);
+  assert.equal(typeof columns[0].cellClick, 'function');
+  assert.match(columns[0].formatter(), />\+</);
+  let selectedId = null;
+  let propagationStopped = false;
+  const action = TableBuilder.actionColumn((id) => { selectedId = id; });
+  action.cellClick({ stopPropagation: () => { propagationStopped = true; } }, {
+    getRow: () => ({ getData: () => ({ id: 73 }) })
+  });
+  assert.equal(selectedId, 73);
+  assert.equal(propagationStopped, true);
+  assert.deepEqual(columns.slice(1), [
     { title: 'Наименование', field: 'name', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
     { title: 'Модель', field: 'model', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
     { title: 'Производитель', field: 'manufacturer', sorter: 'string', headerFilter: 'input', headerFilterFunc: 'like', headerFilterLiveFilter: true, headerSort: true },
@@ -61,4 +78,60 @@ test('filters descendant devices and maps typed parameters in one pass', () => {
     { id: 10, name: 'Светильник', model: 'L-10', manufacturer: 'Завод 1', parameter_1: 10, parameter_4: 'IP54', parameter_5: '' },
     { id: 11, name: 'Автомат', model: '', manufacturer: 'Завод 2', parameter_1: '', parameter_4: '', parameter_5: 4000 }
   ]);
+});
+
+test('adds a new device to SelDevices with quantity one', async () => {
+  const actions = [];
+  const add = SelectedDeviceWriter.create({ docApi: {
+    fetchTable: async (name) => {
+      assert.equal(name, 'SelDevices');
+      return { id: [], dev_id: [], quantity: [] };
+    },
+    applyUserActions: async (batch) => actions.push(...batch)
+  } });
+
+  assert.deepEqual(await add(['L', 42]), { created: true, quantity: 1 });
+  assert.deepEqual(actions, [
+    ['AddRecord', 'SelDevices', null, { dev_id: 42, quantity: 1 }]
+  ]);
+});
+
+test('increments quantity when the device already exists in SelDevices', async () => {
+  const actions = [];
+  const add = SelectedDeviceWriter.create({ docApi: {
+    fetchTable: async () => ({
+      id: [7, 8],
+      dev_id: [['L', 41], ['L', 42]],
+      quantity: [3, 5]
+    }),
+    applyUserActions: async (batch) => actions.push(...batch)
+  } });
+
+  assert.deepEqual(await add(42), { created: false, quantity: 6 });
+  assert.deepEqual(actions, [
+    ['UpdateRecord', 'SelDevices', 8, { quantity: 6 }]
+  ]);
+});
+
+test('serializes rapid additions so quantity updates are not lost', async () => {
+  const selected = { id: [8], dev_id: [['L', 42]], quantity: [1] };
+  let inFlight = 0;
+  let maxInFlight = 0;
+  const add = SelectedDeviceWriter.create({ docApi: {
+    fetchTable: async () => structuredClone(selected),
+    applyUserActions: async (batch) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((resolve) => setImmediate(resolve));
+      selected.quantity[0] = batch[0][3].quantity;
+      inFlight -= 1;
+    }
+  } });
+
+  assert.deepEqual(await Promise.all([add(42), add(42)]), [
+    { created: false, quantity: 2 },
+    { created: false, quantity: 3 }
+  ]);
+  assert.equal(maxInFlight, 1);
+  assert.equal(selected.quantity[0], 3);
 });

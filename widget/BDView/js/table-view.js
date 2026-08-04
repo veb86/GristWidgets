@@ -6,7 +6,7 @@
   'use strict';
   var table = null;
 
-  function rebuild(columns, rows) {
+  function rebuild(columns, rows, onRowDoubleClick) {
     if (table) table.destroy();
     table = new Tabulator('#device-table', {
       data: rows,
@@ -17,6 +17,11 @@
       renderVertical: 'virtual',
       columnDefaults: { headerSortStartingDir: 'asc' }
     });
+    if (onRowDoubleClick) {
+      table.on('rowDblClick', function(event, row) {
+        onRowDoubleClick(row.getData().id);
+      });
+    }
     return table;
   }
 

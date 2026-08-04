@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BDView issue 37 preview</title>
+  <script>
+    window.grist = {
+      ready: function() {},
+      docApi: {
+        fetchTable: async function(name) {
+          var tables = {
+            SYSTEM: { id: [1], param: ['selectedGroupID'], value: [2] },
+            Categories: { id: [2], parent_id: [0] },
+            CategoryParameters: { id: [1, 2], category_id: [2, 2], parameter_id: [1, 2], manualSort: [1, 2] },
+            Devices: { id: [10, 11, 12], categories_id: [2, 2, 2], name: ['LED светильник', 'Автоматический выключатель', 'Розетка'], model: ['L-10', 'BA47-29', 'R-16'], manufacturer: ['Philips', 'IEK', 'Schneider Electric'] },
+            Parameters: { id: [1, 2], name: ['Мощность', 'Напряжение'], unit: ['Вт', 'В'], data_type: ['float', 'float'] },
+            DeviceParameters: { id: [1, 2, 3, 4, 5, 6], device_id: [10, 10, 11, 11, 12, 12], parameter_id: [1, 2, 1, 2, 1, 2], value_float: [36, 220, 4.5, 400, 2.2, 220], value_int: [null, null, null, null, null, null], value_string: ['', '', '', '', '', ''] },
+            SelDevices: { id: [], dev_id: [], quantity: [] }
+          };
+          return tables[name];
+        },
+        applyUserActions: async function() {}
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../widget/BDView/css/tabulator.min.css">
+  <link rel="stylesheet" href="../widget/BDView/css/style.css">
+</head>
+<body>
+  <main class="widget">
+    <header class="header"><h1>Каталог устройств</h1><span id="summary"></span></header>
+    <div id="message" aria-live="polite"></div>
+    <div id="device-table"></div>
+  </main>
+  <script src="../widget/BDView/js/tabulator.min.js"></script>
+  <script src="../widget/BDView/js/data-utils.js"></script>
+  <script src="../widget/BDView/js/system-monitor.js"></script>
+  <script src="../widget/BDView/js/category-tree.js"></script>
+  <script src="../widget/BDView/js/column-provider.js"></script>
+  <script src="../widget/BDView/js/device-provider.js"></script>
+  <script src="../widget/BDView/js/parameter-provider.js"></script>
+  <script src="../widget/BDView/js/selected-device-writer.js"></script>
+  <script src="../widget/BDView/js/table-builder.js"></script>
+  <script src="../widget/BDView/js/table-view.js"></script>
+  <script src="../widget/BDView/js/app.js"></script>
+</body>
+</html>

@@ -20,12 +20,12 @@ const categoryIds = CategoryTree.descendantIds(categories, 2);
 const selectedParameters = ColumnProvider.forCategory(categoryParameters, parameters, 2);
 const selectedDevices = DeviceProvider.forCategories(devices, categoryIds);
 const values = ParameterProvider.mapForDevices(deviceParameters, selectedDevices.map((device) => device.id), selectedParameters);
-const columns = TableBuilder.columns(selectedParameters);
+const columns = TableBuilder.columns(selectedParameters, function() {});
 const rows = TableBuilder.rows(selectedDevices, selectedParameters, values);
 
 assert.ok(categoryIds.includes(2));
 assert.deepEqual(selectedParameters.map((parameter) => parameter.name), ['Мощность', 'Напряжение', 'Цветовая температура']);
-assert.deepEqual(columns.map((column) => column.field), ['name', 'model', 'manufacturer', 'parameter_1', 'parameter_2', 'parameter_4']);
+assert.deepEqual(columns.map((column) => column.field), ['_add', 'name', 'model', 'manufacturer', 'parameter_1', 'parameter_2', 'parameter_4']);
 assert.equal(rows.length, 1);
 assert.deepEqual(rows[0], {
   id: 1,
