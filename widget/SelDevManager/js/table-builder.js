@@ -38,22 +38,22 @@
   }
 
   /** Создаёт редактируемый столбец Grist. */
-  function dataColumn(name, editHandler) {
+  function dataColumn(definition, editHandler) {
     return {
-      title: name,
-      field: name,
+      title: definition.title,
+      field: definition.field,
       headerSort: true,
-      editor: editorFor(name),
+      editor: editorFor(definition.field),
       cellEdited: editHandler
     };
   }
 
   /** Формирует колонки: X, все Grist-колонки и кнопки после quantity. */
-  function columns(names, handlers) {
+  function columns(definitions, handlers) {
     var result = [serviceColumn('X', 'service-cell--remove', handlers.remove)];
-    names.forEach(function(name) {
-      result.push(dataColumn(name, handlers.edit));
-      if (name !== 'quantity') return;
+    definitions.forEach(function(definition) {
+      result.push(dataColumn(definition, handlers.edit));
+      if (definition.field !== 'quantity') return;
       result.push(serviceColumn('+', 'service-cell--increase', handlers.increase));
       result.push(serviceColumn('-', 'service-cell--decrease', handlers.decrease));
     });

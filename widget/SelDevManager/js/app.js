@@ -68,7 +68,7 @@
       });
       return;
     }
-    if (columns.join('\u0000') !== currentColumns.join('\u0000')) {
+    if (JSON.stringify(columns) !== JSON.stringify(currentColumns)) {
       table.setColumns(nextColumns);
     }
     await table.replaceData(rows);
@@ -78,7 +78,7 @@
   async function refresh() {
     try {
       var result = await api.load();
-      var columns = root.SelDevDataUtils.columnNames(result.table);
+      var columns = result.columns;
       currentRows = result.rows;
       await render(currentRows, columns);
       currentColumns = columns;

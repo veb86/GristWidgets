@@ -20,17 +20,79 @@ test('converts Grist column data into rows and preserves column order', () => {
   assert.deepEqual(DataUtils.columnNames(table), ['id', 'dev_id', 'quantity', 'Note']);
 });
 
-test('sends exact Grist actions for updates and removals', async () => {
+test('builds visible column settings in configured order with custom titles', () => {
+  const source = {
+    id: [4],
+    dev_id: [['L', 12]],
+    quantity: [2],
+    Note: ['Первый'],
+    manualSort: [99]
+  };
+  const settings = {
+    id: [1, 2, 3, 4],
+    namecol: ['Note', 'manualSort', 'quantity', 'dev_id'],
+    view: [true, true, true, true],
+    name: ['Примечание', 'Служебный', 'Количество', 'Устройство'],
+    sort: [30, 5, 20, 10]
+  };
+
+  assert.deepEqual(DataUtils.configuredColumns(source, settings), [
+    { field: 'dev_id', title: 'Устройство' },
+    { field: 'quantity', title: 'Количество' },
+    { field: 'Note', title: 'Примечание' }
+  ]);
+});
+
+test('hides disabled, unknown and system columns from configured settings', () => {
+  const source = { id: [4], quantity: [2], Note: ['Первый'] };
+  const settings = {
+    id: [1, 2, 3, 4, 5],
+    namecol: ['id', 'quantity', 'Note', 'Missing', 'quantity'],
+    view: [true, true, false, true, true],
+    name: ['ID', '', 'Примечание', 'Нет', 'Дубликат'],
+    sort: [1, 2, 3, 4, 5]
+  };
+
+  assert.deepEqual(DataUtils.configuredColumns(source, settings), [
+    { field: 'quantity', title: 'quantity' }
+  ]);
+});
+
+test('treats only enabled boolean settings as visible', () => {
+  const source = { id: [4], quantity: [2], Note: ['Первый'] };
+  const settings = {
+    id: [1, 2],
+    namecol: ['quantity', 'Note'],
+    view: [true, false],
+    name: ['Количество', 'Примечание'],
+    sort: [1, 2]
+  };
+
+  assert.deepEqual(DataUtils.configuredColumns(source, settings), [
+    { field: 'quantity', title: 'Количество' }
+  ]);
+});
+
+test('loads devices with display settings and sends exact Grist actions', async () => {
   const calls = [];
+  const fetches = [];
   const api = GristApi.create({ docApi: {
-    fetchTable: async () => ({ id: [2], quantity: [5] }),
+    fetchTable: async (name) => {
+      fetches.push(name);
+      if (name === 'SelDevicesSet') {
+        return { id: [1], namecol: ['quantity'], view: [true], name: ['Количество'], sort: [1] };
+      }
+      return { id: [2], quantity: [5] };
+    },
     applyUserActions: async (actions) => calls.push(actions)
   } });
 
   assert.deepEqual(await api.load(), {
     table: { id: [2], quantity: [5] },
-    rows: [{ id: 2, quantity: 5 }]
+    rows: [{ id: 2, quantity: 5 }],
+    columns: [{ field: 'quantity', title: 'Количество' }]
   });
+  assert.deepEqual(fetches, ['SelDevices', 'SelDevicesSet']);
   await api.update(2, 'quantity', 6);
   await api.remove(2);
   await api.removeAll([2, 7]);
@@ -96,31 +158,37 @@ test('never persists zero and removes quantity one only after confirmation', asy
   assert.deepEqual(removals, [5]);
 });
 
-test('places service columns around quantity and keeps ordinary columns editable', () => {
+test('places fixed service columns around quantity and uses configured titles', () => {
   const handlers = {
     remove: () => {},
     increase: () => {},
     decrease: () => {},
     edit: () => {}
   };
-  const columns = TableBuilder.columns(['id', 'dev_id', 'quantity', 'Note'], handlers);
+  const columns = TableBuilder.columns([
+    { field: 'dev_id', title: 'Устройство' },
+    { field: 'quantity', title: 'Количество' },
+    { field: 'Note', title: 'Примечание' }
+  ], handlers);
 
   assert.deepEqual(columns.map((column) => column.title), [
-    'X', 'id', 'dev_id', 'quantity', '+', '-', 'Note'
+    'X', 'Устройство', 'Количество', '+', '-', 'Примечание'
   ]);
   assert.equal(columns[0].headerSort, false);
   assert.equal(columns[0].editor, false);
   assert.equal(columns[0].cssClass, 'service-cell service-cell--remove');
-  assert.equal(columns[1].editor, false);
-  assert.equal(columns[3].editor, 'number');
+  assert.equal(columns[1].field, 'dev_id');
+  assert.equal(columns[1].editor, 'input');
+  assert.equal(columns[2].field, 'quantity');
+  assert.equal(columns[2].editor, 'number');
+  assert.equal(columns[3].headerSort, false);
   assert.equal(columns[4].headerSort, false);
-  assert.equal(columns[5].headerSort, false);
-  assert.equal(columns[6].editor, 'input');
+  assert.equal(columns[5].editor, 'input');
 });
 
 test('service column callbacks receive the selected row', () => {
   const received = [];
-  const columns = TableBuilder.columns(['quantity'], {
+  const columns = TableBuilder.columns([{ field: 'quantity', title: 'Количество' }], {
     remove: (row) => received.push(['remove', row]),
     increase: (row) => received.push(['increase', row]),
     decrease: (row) => received.push(['decrease', row]),
