@@ -10,6 +10,7 @@
   'use strict';
 
   var TABLE_NAME = 'SelDevices';
+  var SETTINGS_TABLE_NAME = 'SelDevicesSet';
 
   /** Создаёт изолированный интерфейс всех операций с Grist API. */
   function create(gristApi) {
@@ -17,8 +18,16 @@
 
     /** Загружает всю таблицу и готовит строки для Tabulator. */
     async function load() {
-      var table = await gristApi.docApi.fetchTable(TABLE_NAME);
-      return { table: table, rows: DataUtils.toRows(table) };
+      var tables = await Promise.all([
+        gristApi.docApi.fetchTable(TABLE_NAME),
+        gristApi.docApi.fetchTable(SETTINGS_TABLE_NAME)
+      ]);
+      var table = tables[0];
+      return {
+        table: table,
+        rows: DataUtils.toRows(table),
+        columns: DataUtils.configuredColumns(table, tables[1])
+      };
     }
 
     /** Записывает изменённое значение одного обычного столбца. */
@@ -48,5 +57,5 @@
     return { load: load, update: update, remove: remove, removeAll: removeAll };
   }
 
-  return { TABLE_NAME: TABLE_NAME, create: create };
+  return { TABLE_NAME: TABLE_NAME, SETTINGS_TABLE_NAME: SETTINGS_TABLE_NAME, create: create };
 });
