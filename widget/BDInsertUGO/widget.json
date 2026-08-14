@@ -1,0 +1,14 @@
+{
+  "name": "BDInsertUGO",
+  "description": "Выбор условно-графического обозначения из дерева InsertUGO",
+  "version": "1.0.0",
+  "grist": {
+    "name": "BDInsertUGO",
+    "url": "index.html",
+    "widgetId": "bdinsertugo",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full"
+  }
+}
