@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BDInsertDev preview</title>
+  <script>
+    window.grist = {
+      ready: function() {},
+      onRecords: function(callback) { window.previewRefresh = callback; },
+      docApi: {
+        fetchTable: async function(name) {
+          if (name === 'InsertDev') return {
+            id: [1, 2, 3, 4, 5, 6],
+            parameter: ['Позиция', 'Мощность', 'Напряжение', 'Количество', 'Активно', 'Имя'],
+            value_float: [null, 125.5, null, null, null, null],
+            value_int: [null, null, null, 0, null, null],
+            value_string: ['CABLE_POWER', null, null, null, null, 'Кабель АВВГ 3×120'],
+            value_boolean: [null, null, null, null, false, null],
+            unit: ['', 'кВт', 'В', 'шт.', '', ''],
+            sort1: [1, 2, 3, 4, 5, 6],
+            sort2: [null, null, null, null, null, null],
+            type: ['string', 'float', 'float', 'int', 'boolean', 'string'],
+            parametr_column: ['Categories', '', '', '', '', '']
+          };
+          if (name === 'Categories') return {
+            id: [1, 2, 3],
+            name: ['Оборудование 6–10 кВ', 'Кабели силовые', 'Кабели контрольные'],
+            parent_id: [null, ['L', 1], ['L', 1]],
+            code: ['', 'CABLE_POWER', 'CABLE_CONTROL'],
+            sort1: [0, 0, 1]
+          };
+          throw new Error('No such table: ' + name);
+        },
+        applyUserActions: async function(actions) { window.previewActions = actions; }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../widget/BDInsertDev/css/tabulator.min.css">
+  <link rel="stylesheet" href="../widget/BDInsertDev/css/style.css">
+</head>
+<body>
+  <main class="widget">
+    <header class="header">
+      <h1>Параметры устройства</h1>
+      <div id="status" class="status" aria-live="polite"></div>
+    </header>
+    <section id="parameter-list" class="parameter-list"></section>
+  </main>
+  <dialog id="source-dialog" class="source-dialog">
+    <div class="dialog-header">
+      <h2 data-dialog-title>Выбор значения</h2>
+      <button class="close-button" data-dialog-close type="button">×</button>
+    </div>
+    <div class="dialog-help">Выберите строку двойным или одиночным нажатием.</div>
+    <div class="dialog-error" data-dialog-error></div>
+    <div class="source-table" data-source-table></div>
+  </dialog>
+  <script src="../widget/BDInsertDev/js/tabulator.min.js"></script>
+  <script src="../widget/BDInsertDev/js/data-utils.js"></script>
+  <script src="../widget/BDInsertDev/js/value-logic.js"></script>
+  <script src="../widget/BDInsertDev/js/grist-api.js"></script>
+  <script src="../widget/BDInsertDev/js/source-dialog.js"></script>
+  <script src="../widget/BDInsertDev/js/parameter-view.js"></script>
+  <script src="../widget/BDInsertDev/js/data-monitor.js"></script>
+  <script src="../widget/BDInsertDev/js/app.js"></script>
+</body>
+</html>
