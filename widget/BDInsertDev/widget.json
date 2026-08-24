@@ -1,0 +1,14 @@
+{
+  "name": "BD InsertDev",
+  "description": "Заполнение типизированных параметров таблицы InsertDev",
+  "version": "1.0.0",
+  "grist": {
+    "name": "BD InsertDev",
+    "url": "index.html",
+    "widgetId": "bdinsertdev",
+    "published": true
+  },
+  "options": {
+    "requiredAccess": "full"
+  }
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Параметры устройства</title>
+  <link rel="stylesheet" href="./css/tabulator.min.css">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <main class="widget">
+    <header class="header">
+      <h1>Параметры устройства</h1>
+      <div id="status" class="status" aria-live="polite"></div>
+    </header>
+    <section
+      id="parameter-list"
+      class="parameter-list"
+      aria-label="Параметры InsertDev"
+    ></section>
+  </main>
+
+  <dialog id="source-dialog" class="source-dialog">
+    <div class="dialog-header">
+      <h2 data-dialog-title>Выбор значения</h2>
+      <button
+        class="close-button"
+        data-dialog-close
+        type="button"
+        aria-label="Закрыть"
+      >×</button>
+    </div>
+    <div class="dialog-help">
+      Выберите строку двойным или одиночным нажатием.
+    </div>
+    <div class="dialog-error" data-dialog-error aria-live="polite"></div>
+    <div class="source-table" data-source-table></div>
+  </dialog>
+
+  <script src="./grist-plugin-api.js"></script>
+  <script src="./js/tabulator.min.js"></script>
+  <script src="./js/data-utils.js"></script>
+  <script src="./js/value-logic.js"></script>
+  <script src="./js/grist-api.js"></script>
+  <script src="./js/source-dialog.js"></script>
+  <script src="./js/parameter-view.js"></script>
+  <script src="./js/data-monitor.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
