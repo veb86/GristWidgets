@@ -25,6 +25,6 @@ h1 { font-size: 17px; margin: 0; }
 .tree-node:focus-visible { outline: 2px solid #126fc2; outline-offset: 1px; }
 .empty-state { color: #68727d; margin: 28px 8px; text-align: center; }
 .preview-pane { align-items: center; border-top: 1px solid #cfd5db; display: flex; flex: 1 1 0; justify-content: center; min-height: 0; overflow: hidden; padding: 12px; }
-#ugo-preview { display: block; height: 100%; max-height: 100%; max-width: 100%; object-fit: contain; width: 100%; }
+#ugo-preview { display: block; height: auto; max-height: 80%; max-width: 80%; object-fit: contain; width: auto; }
 #ugo-preview[hidden] { display: none; }
 #preview-message { color: #a22; margin: 0; text-align: center; }
