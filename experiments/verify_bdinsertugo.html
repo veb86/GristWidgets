@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>BDInsertUGO manual verification</title></head>
+<body>
+<iframe id="widget" src="../widget/BDInsertUGO/index.html" style="border:1px solid #aaa;height:720px;width:430px"></iframe>
+<script>
+  var frame = document.getElementById('widget');
+  frame.addEventListener('load', function() {
+    frame.contentWindow.grist = {
+      ready: function() {},
+      docApi: {
+        fetchTable: async function(name) {
+          if (name === 'InsertUGO') return {
+            id: [1, 2, 3, 4, 5, 6],
+            name: ['Светильники', 'Светильник 600×600', 'Светильник 2×36', 'Светильник 2×18', 'Розетки', 'Выключатели'],
+            parent_id: [null, ['L', 1], ['L', 1], ['L', 1], null, null],
+            ugo_svg: ['', 'light_600_600', 'demo_light', 'light_2_18', '', ''],
+            ugo_dxf: ['', 'LIGHT_600_600', 'LIGHT_2_36', 'LIGHT_2_18', '', ''],
+            sort1: [1, 1, 2, 3, 2, 3],
+            sort2: [null, null, null, null, null, null]
+          };
+          return { id: [10], param: ['nameUGO'], value: ['LIGHT_2_36'] };
+        },
+        applyUserActions: async function() {}
+      }
+    };
+    frame.contentWindow.BDInsertUGOApp.initialize();
+  });
+</script>
+</body>
+</html>

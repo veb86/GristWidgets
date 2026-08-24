@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Выбор УГО</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <main class="widget">
+    <section class="tree-pane" aria-label="Дерево УГО">
+      <header><h1>Выбор УГО</h1></header>
+      <div id="message" aria-live="polite"></div>
+      <div id="ugo-tree" class="tree-scroll" aria-label="Иерархия InsertUGO"></div>
+    </section>
+    <section class="preview-pane" aria-label="Предпросмотр УГО">
+      <img id="ugo-preview" alt="Предпросмотр выбранного УГО" hidden>
+      <p id="preview-message" aria-live="polite"></p>
+    </section>
+  </main>
+  <script src="../BDTree/grist-plugin-api.js"></script>
+  <script src="./js/data-utils.js"></script>
+  <script src="./js/ugo-tree.js"></script>
+  <script src="./js/svg-loader.js"></script>
+  <script src="./js/ugo-repository.js"></script>
+  <script src="./js/tree-view.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
