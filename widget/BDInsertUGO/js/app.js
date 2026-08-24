@@ -40,9 +40,9 @@
     treeView.select(selectedId);
     preview(record);
     try {
-      await repository.saveSelection(systemRecord, valueColumn, record.name || '');
-      systemRecord[valueColumn] = record.name || '';
-      message(record.name ? 'Выбрано: ' + record.name : 'Выбрана группа без имени', 'success');
+      await repository.saveSelection(systemRecord, valueColumn, record.ugo_dxf || '');
+      systemRecord[valueColumn] = record.ugo_dxf || '';
+      message(record.ugo_dxf ? 'Выбрано: ' + record.ugo_dxf : 'Выбрана группа без имени', 'success');
     } catch (error) {
       message('Не удалось сохранить выбор: ' + error.message, 'error');
     }
