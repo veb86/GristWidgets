@@ -40,9 +40,9 @@
     treeView.select(selectedId);
     preview(record);
     try {
-      await repository.saveSelection(systemRecord, valueColumn, record.ugo_dxf || '');
-      systemRecord[valueColumn] = record.ugo_dxf || '';
-      message(record.ugo_dxf ? 'Выбрано: ' + (record.name || record.ugo_dxf) : 'Выбрана группа без УГО', 'success');
+      await repository.saveSelection(systemRecord, valueColumn, record.name || '');
+      systemRecord[valueColumn] = record.name || '';
+      message(record.name ? 'Выбрано: ' + record.name : 'Выбрана группа без имени', 'success');
     } catch (error) {
       message('Не удалось сохранить выбор: ' + error.message, 'error');
     }
@@ -66,6 +66,9 @@
         treeView.render(BDInsertUGOTree.build(records), selected ? BDInsertUGOTree.ancestorIds(records, selected.id) : []);
         treeView.select(selectedId);
         preview(selected);
+        if (selected && selected.name) {
+          message('Выбрано: ' + selected.name, 'success');
+        }
       }
       if (lastError) message('', '');
       lastError = null;

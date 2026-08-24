@@ -80,7 +80,7 @@ test('loads both source tables in parallel and detects SYSTEM value column', asy
   assert.equal(data.selectedValue, 'LIGHT');
 });
 
-test('writes or clears ugo_dxf through one UpdateRecord action', async () => {
+test('writes or clears name through one UpdateRecord action', async () => {
   const actions = [];
   const repository = UgoRepository.create({ docApi: {
     fetchTable: async () => ({}),
