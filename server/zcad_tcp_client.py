@@ -233,10 +233,46 @@ class ZCADTCPClient:
         self.disconnect()
         return result
 
+    def batch_lines(self, lines: List[List[float]]) -> Dict[str, Any]:
+        """
+        Массовое создание множества линий одной командой.
+        
+        Args:
+            lines: Список линий, где каждая линия это [x1, y1, x2, y2]
+            
+        Returns:
+            Результат выполнения пакетной команды
+        """
+        return self._send_command('BATCH_LINES', lines)
+
+    def insert_device(self, device_name: str, params: Dict[str, Any] = None, 
+                      x: float = 0, y: float = 0) -> Dict[str, Any]:
+        """
+        Вставка устройства на чертеж.
+        
+        Args:
+            device_name: Имя устройства для вставки
+            params: Параметры устройства (переменные)
+            x, y: Координаты вставки
+            
+        Returns:
+            Результат вставки устройства
+        """
+        if params is None:
+            params = {}
+        
+        args = {
+            'device_name': device_name,
+            'params': params,
+            'position': {'x': x, 'y': y}
+        }
+        return self._send_command('INSERT_DEVICE', [args])
+
     def random_lines(self, count: int = 1000, min_coord: float = -100, 
                      max_coord: float = 100) -> List[Dict[str, Any]]:
         """
-        Создание множества линий с рандомными координатами в пакетном режиме.
+        Создание множества линий с рандомными координатами через BATCH_LINES.
+        Оптимизированная версия - отправляет все линии одной командой.
         
         Args:
             count: Количество линий
@@ -244,42 +280,21 @@ class ZCADTCPClient:
             max_coord: Максимальная координата
             
         Returns:
-            Список результатов выполнения команд
+            Список результатов (один результат от BATCH_LINES)
         """
-        results = []
-
-        # Устанавливаем постоянное соединение
-        self.connect()
-
-        try:
-            # Начинаем пакетный режим
-            result = self._send_command('BEGIN_BATCH', use_persistent=True)
-            if result.get('status') != 'ok':
-                return [{'status': 'error', 
-                        'error': 'Failed to start batch mode: ' + 
-                                result.get('error', 'unknown')}]
-            results.append(result)
-
-            # Отправляем все линии через одно соединение
-            for i in range(count):
-                x1 = random.uniform(min_coord, max_coord)
-                y1 = random.uniform(min_coord, max_coord)
-                x2 = random.uniform(min_coord, max_coord)
-                y2 = random.uniform(min_coord, max_coord)
-                
-                result = self._send_command('LINE', [x1, y1, x2, y2], 
-                                           use_persistent=True)
-                results.append(result)
-
-        finally:
-            # Завершаем пакетный режим и закрываем соединение
-            result = self._send_command('END_BATCH', use_persistent=True)
-            results.append(result)
-            
-            # Закрываем соединение
-            self.disconnect()
-
-        return results
+        # Генерируем все линии заранее
+        lines_data = []
+        for i in range(count):
+            x1 = random.uniform(min_coord, max_coord)
+            y1 = random.uniform(min_coord, max_coord)
+            x2 = random.uniform(min_coord, max_coord)
+            y2 = random.uniform(min_coord, max_coord)
+            lines_data.append([x1, y1, x2, y2])
+        
+        # Отправляем всё одной командой
+        result = self.batch_lines(lines_data)
+        
+        return [result]
 
     def __enter__(self):
         """Контекстный менеджер: вход."""
