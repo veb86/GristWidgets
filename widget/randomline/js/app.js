@@ -240,17 +240,22 @@
         const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
 
         try {
+            // Формируем JSON для отправки (пример ниже)
+            const requestBody = {
+                count: params.count,
+                seed: params.seed,
+                min_coord: params.minCoord,
+                max_coord: params.maxCoord
+            };
+            
+            console.log('[RandomLine] Отправка запроса:', JSON.stringify(requestBody, null, 2));
+            
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    count: params.count,
-                    seed: params.seed,
-                    min_coord: params.minCoord,
-                    max_coord: params.maxCoord
-                }),
+                body: JSON.stringify(requestBody),
                 signal: controller.signal
             });
 
@@ -260,7 +265,9 @@
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            return await response.json();
+            const result = await response.json();
+            console.log('[RandomLine] Получен ответ:', result);
+            return result;
         } catch (error) {
             clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
