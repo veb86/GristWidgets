@@ -286,6 +286,78 @@ def draw_single_line():
         }), 500
 
 
+@app.route('/api/zcad/insert-device', methods=['POST'])
+def insert_device():
+    """
+    Вставка устройства на чертеж.
+    
+    Request JSON:
+        {
+            "device_name": "RESISTOR_0805",
+            "params": {
+                "resistance": 1000,
+                "power": 0.125,
+                "tolerance": 1
+            },
+            "x": 50,
+            "y": 100
+        }
+    
+    Returns:
+        JSON с результатом вставки
+    """
+    logger.info("POST /api/zcad/insert-device - Вставка устройства")
+    
+    if not request.is_json:
+        return jsonify({
+            'status': 'error',
+            'message': 'Content-Type must be application/json'
+        }), 400
+    
+    data = request.get_json()
+    
+    try:
+        device_name = str(data.get('device_name', ''))
+        params = data.get('params', {})
+        x = float(data.get('x', 0))
+        y = float(data.get('y', 0))
+    except (ValueError, TypeError) as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Invalid parameters: {str(e)}'
+        }), 400
+    
+    if not device_name:
+        return jsonify({
+            'status': 'error',
+            'message': 'device_name is required'
+        }), 400
+    
+    try:
+        client = get_zcad_client()
+        result = client.insert_device(device_name, params, x, y)
+        
+        if result.get('status') == 'ok':
+            logger.info(f"Устройство '{device_name}' вставлено в ({x},{y})")
+            return jsonify({
+                'status': 'ok',
+                'message': f'Device {device_name} inserted',
+                'result': result
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result.get('error', 'Failed to insert device')
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Ошибка вставки устройства: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """
