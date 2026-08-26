@@ -7,14 +7,14 @@
     'use strict';
 
     // Конфигурация
-    const CONFIG = {
-        defaultFlaskUrl: 'http://127.0.0.1:5000',
-        defaultLineCount: 1000,
-        defaultMinCoord: -100,
-        defaultMaxCoord: 100,
-        maxLines: 10000,
-        requestTimeout: 30000 // 30 секунд
-    };
+const CONFIG = {
+    defaultFlaskUrl: window.location.origin,
+    defaultLineCount: 1000,
+    defaultMinCoord: -100,
+    defaultMaxCoord: 100,
+    maxLines: 10000,
+    requestTimeout: 30000
+};
 
     // Состояние виджета
     let state = {
@@ -31,6 +31,9 @@
      */
     async function init() {
         console.log('[RandomLine] Инициализация виджета...');
+console.log('[RandomLine] location.href =', window.location.href);
+console.log('[RandomLine] location.origin =', window.location.origin);
+console.log('[RandomLine] flaskUrl =', state.flaskUrl);
 
         // Кэшируем DOM элементы
         cacheElements();
@@ -144,66 +147,212 @@
     /**
      * Обработчик кнопки рисования
      */
-    async function handleDraw() {
-        if (state.isProcessing) {
-            showResult('error', 'Операция уже выполняется');
-            return;
-        }
+/**
+ * Обработчик кнопки рисования
+ */
+async function handleDraw() {
 
-        // Получаем параметры
-        const params = getFormParams();
-
-        // Валидация
-        const validation = validateParams(params);
-        if (!validation.valid) {
-            showResult('error', validation.error);
-            return;
-        }
-
-        // Начинаем операцию
-        state.isProcessing = true;
-        updateUI();
-        hideResult();
-        showProgress(0, 'Подключение к Flask серверу...');
-        addLog('info', `Запуск: ${params.count} линий`);
-
-        try {
-            // Отправляем запрос на Flask сервер
-            const response = await sendDrawRequest(params);
-            
-            if (response.status === 'ok') {
-                showProgress(100, 'Готово!');
-                showResult('success', response.message || 'Линии успешно созданы');
-                addLog('success', `Завершено: ${params.count} линий`);
-                
-                // Обновляем запись в Grist (если нужно)
-                updateGristRecord(params);
-            } else {
-                throw new Error(response.message || 'Неизвестная ошибка');
-            }
-        } catch (error) {
-            console.error('[RandomLine] Ошибка:', error);
-            showProgress(0, '');
-            showResult('error', error.message);
-            addLog('error', `Ошибка: ${error.message}`);
-        } finally {
-            state.isProcessing = false;
-            updateUI();
-        }
+    if (state.isProcessing) {
+        showResult('error', 'Операция уже выполняется');
+        return;
     }
+
+
+    // Получаем параметры формы
+    const params = getFormParams();
+
+
+    // Проверяем параметры
+    const validation = validateParams(params);
+
+    if (!validation.valid) {
+        showResult('error', validation.error);
+        return;
+    }
+
+
+    // Начинаем выполнение
+    state.isProcessing = true;
+
+    updateUI();
+    hideResult();
+
+    showProgress(
+        5,
+        `Генерация ${formatNumber(params.count)} линий...`
+    );
+
+    addLog(
+        'info',
+        `Запуск: ${params.count} линий`
+    );
+
+
+    try {
+
+        // ---------------------------------------------------------------
+        // Отправляем команду непосредственно в ZCAD HTTP /ipc
+        // ---------------------------------------------------------------
+
+        showProgress(
+            20,
+            `Отправка ${formatNumber(params.count)} линий в ZCAD...`
+        );
+
+
+        const response =
+            await sendDrawRequest(params);
+
+
+        console.log(
+            '[RandomLine] Полный ответ IPC:',
+            response
+        );
+
+        console.log(
+            '[RandomLine] Полный JSON:',
+            JSON.stringify(response, null, 2)
+        );
+
+
+        // ---------------------------------------------------------------
+        // Проверяем ответ ZCAD
+        //
+        // Успешный ответ:
+        //
+        // {
+        //   "id": "...",
+        //   "status": "ok",
+        //   "result": "Created 10 lines"
+        // }
+        //
+        // Ошибка:
+        //
+        // {
+        //   "id": "...",
+        //   "status": "error",
+        //   "error": "..."
+        // }
+        // ---------------------------------------------------------------
+
+        if (!response || typeof response !== 'object') {
+
+            throw new Error(
+                'ZCAD вернул некорректный ответ'
+            );
+
+        }
+
+
+        if (response.status !== 'ok') {
+
+            const errorMessage =
+                response.error ||
+                response.message ||
+                'Неизвестная ошибка ZCAD';
+
+            console.error(
+                '[RandomLine] IPC вернул ошибку:',
+                response
+            );
+
+            throw new Error(errorMessage);
+        }
+
+
+        // ---------------------------------------------------------------
+        // УСПЕШНО
+        // ---------------------------------------------------------------
+
+        showProgress(
+            100,
+            'Готово!'
+        );
+
+
+        const successMessage =
+            response.result ||
+            response.message ||
+            `Создано ${params.count} линий`;
+
+
+        showResult(
+            'success',
+            successMessage
+        );
+
+
+        addLog(
+            'success',
+            successMessage
+        );
+
+
+        console.log(
+            '[RandomLine] Операция успешно завершена:',
+            successMessage
+        );
+
+
+        // При необходимости обновляем запись Grist
+        updateGristRecord(params);
+
+
+    } catch (error) {
+
+        console.error(
+            '[RandomLine] Ошибка:',
+            error
+        );
+
+
+        const errorMessage =
+            error && error.message
+                ? error.message
+                : 'Неизвестная ошибка';
+
+
+        showProgress(
+            0,
+            ''
+        );
+
+
+        showResult(
+            'error',
+            errorMessage
+        );
+
+
+        addLog(
+            'error',
+            `Ошибка: ${errorMessage}`
+        );
+
+
+    } finally {
+
+        state.isProcessing = false;
+
+        updateUI();
+
+    }
+}
 
     /**
      * Получение параметров из формы
      */
-    function getFormParams() {
-        return {
-            count: parseInt(elements.lineCount.value) || CONFIG.defaultLineCount,
-            seed: elements.seedValue.value ? parseInt(elements.seedValue.value) : null,
-            minCoord: parseFloat(elements.minCoord.value) || CONFIG.defaultMinCoord,
-            maxCoord: parseFloat(elements.maxCoord.value) || CONFIG.defaultMaxCoord,
-            flaskUrl: elements.flaskUrl.value || CONFIG.defaultFlaskUrl
-        };
-    }
+function getFormParams() {
+    return {
+        count: parseInt(elements.lineCount.value) || CONFIG.defaultLineCount,
+        seed: elements.seedValue.value
+            ? parseInt(elements.seedValue.value)
+            : null,
+        minCoord: parseFloat(elements.minCoord.value) || CONFIG.defaultMinCoord,
+        maxCoord: parseFloat(elements.maxCoord.value) || CONFIG.defaultMaxCoord,
+        flaskUrl: elements.flaskUrl.value || CONFIG.defaultFlaskUrl
+    };
+}
 
     /**
      * Валидация параметров
@@ -229,88 +378,326 @@
         }
         return { valid: true };
     }
+/**
+ * Генератор случайных линий
+ *
+ * Возвращает:
+ *
+ * [
+ *   [x1, y1, x2, y2],
+ *   [x1, y1, x2, y2],
+ *   ...
+ * ]
+ */
+function generateRandomLines(count, minCoord, maxCoord, seed) {
 
-    /**
-     * Отправка запроса на Flask сервер
+    const lines = [];
+
+    /*
+     * Если seed задан — используем простой
+     * детерминированный генератор.
+     *
+     * Это позволяет получить одинаковые линии
+     * при одинаковом seed.
      */
-    async function sendDrawRequest(params) {
-        const url = `${params.flaskUrl}/api/zcad/draw-random-lines`;
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
 
-        try {
-            // Формируем JSON для отправки (пример ниже)
-            const requestBody = {
-                count: params.count,
-                seed: params.seed,
-                min_coord: params.minCoord,
-                max_coord: params.maxCoord
-            };
-            
-            console.log('[RandomLine] Отправка запроса:', JSON.stringify(requestBody, null, 2));
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody),
-                signal: controller.signal
-            });
+    let random;
 
-            clearTimeout(timeoutId);
+    if (seed !== null && !isNaN(seed)) {
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+        let s = seed >>> 0;
 
-            const result = await response.json();
-            console.log('[RandomLine] Получен ответ:', result);
-            return result;
-        } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-                throw new Error('Превышено время ожидания ответа от сервера');
-            }
-            throw new Error(`Ошибка соединения: ${error.message}`);
-        }
+        random = function() {
+
+            s += 0x6D2B79F5;
+
+            let t = s;
+
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(
+                t ^ (t >>> 7),
+                t | 61
+            );
+
+            return (
+                ((t ^ (t >>> 14)) >>> 0) /
+                4294967296
+            );
+        };
+
+    } else {
+
+        random = Math.random;
+
     }
 
-    /**
-     * Обработчик кнопки проверки соединения (Ping)
-     */
-    async function handlePing() {
-        const flaskUrl = elements.flaskUrl.value || CONFIG.defaultFlaskUrl;
-        
-        setConnectionStatus('checking', 'Проверка...');
-        addLog('info', 'Проверка соединения с ZCAD');
 
-        try {
-            const response = await fetch(`${flaskUrl}/api/zcad/ping`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+    function randomCoord() {
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
+        return minCoord +
+            random() * (maxCoord - minCoord);
 
-            const data = await response.json();
-            
-            if (data.status === 'ok') {
-                setConnectionStatus('connected', 'ZCAD: подключено');
-                addLog('success', 'ZCAD доступен');
-            } else {
-                throw new Error(data.message || 'ZCAD не ответил');
-            }
-        } catch (error) {
-            setConnectionStatus('disconnected', 'ZCAD: не доступен');
-            addLog('error', `Ошибка ping: ${error.message}`);
-        }
     }
+
+
+    for (let i = 0; i < count; i++) {
+
+        lines.push([
+            randomCoord(),
+            randomCoord(),
+            randomCoord(),
+            randomCoord()
+        ]);
+
+    }
+
+    return lines;
+}
+    /**
+ * Отправка запроса на HTTP сервер ZCAD
+ */
+async function sendDrawRequest(params) {
+
+    const url = `${params.flaskUrl}/ipc`;
+
+    const controller = new AbortController();
+
+    const timeoutId = setTimeout(
+        () => controller.abort(),
+        CONFIG.requestTimeout
+    );
+
+    try {
+
+        /*
+         * Генерируем линии непосредственно в Widget.
+         */
+        const lines = generateRandomLines(
+            params.count,
+            params.minCoord,
+            params.maxCoord,
+            params.seed
+        );
+
+
+        /*
+         * Уникальный ID команды.
+         */
+        const commandId =
+            'randomline-' +
+            Date.now() +
+            '-' +
+            Math.random()
+                .toString(36)
+                .substring(2, 8);
+
+
+        /*
+         * Формат точно соответствует
+         * uzvhttpipc.pas / uzvipcintegration.pas:
+         *
+         * {
+         *   id: "...",
+         *   cmd: "BATCH_LINES",
+         *   args: [
+         *     [
+         *       [x1,y1,x2,y2],
+         *       ...
+         *     ]
+         *   ]
+         * }
+         */
+        const requestBody = {
+
+            id: commandId,
+
+            cmd: 'BATCH_LINES',
+
+            args: [
+                lines
+            ]
+
+        };
+
+
+        console.log(
+            '[RandomLine] POST:',
+            url
+        );
+
+        console.log(
+            '[RandomLine] Command ID:',
+            commandId
+        );
+
+        console.log(
+            '[RandomLine] Lines:',
+            lines.length
+        );
+
+
+        const response = await fetch(url, {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify(requestBody),
+
+            signal: controller.signal
+
+        });
+
+
+        clearTimeout(timeoutId);
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        console.log(
+            '[RandomLine] Получен ответ:',
+            result
+        );
+
+
+        return result;
+
+    } catch (error) {
+
+        clearTimeout(timeoutId);
+
+
+        if (error.name === 'AbortError') {
+
+            throw new Error(
+                'Превышено время ожидания ответа от ZCAD'
+            );
+
+        }
+
+
+        throw new Error(
+            `Ошибка соединения: ${error.message}`
+        );
+
+    }
+
+}
+
+    /**
+ * Обработчик кнопки проверки соединения (Ping)
+ */
+async function handlePing() {
+    const flaskUrl =
+        elements.flaskUrl.value ||
+        CONFIG.defaultFlaskUrl;
+
+    const baseUrl =
+        flaskUrl.replace(/\/+$/, '');
+
+    const url =
+        `${baseUrl}/ipc`;
+
+
+    setConnectionStatus(
+        'checking',
+        'Проверка...'
+    );
+
+    addLog(
+        'info',
+        `Проверка соединения с ZCAD: ${url}`
+    );
+
+
+    try {
+
+        console.log(
+            '[RandomLine] Ping:',
+            url
+        );
+
+console.log('[RandomLine] FETCH FROM:', window.location.origin);
+console.log('[RandomLine] FETCH TO:', url);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-cache'
+        });
+
+
+        if (!response.ok) {
+            throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            '[RandomLine] Ping response:',
+            data
+        );
+
+
+        if (data.status === 'ok') {
+
+            setConnectionStatus(
+                'connected',
+                'ZCAD: подключено'
+            );
+
+            addLog(
+                'success',
+                'ZCAD HTTP сервер доступен'
+            );
+
+        } else {
+
+            throw new Error(
+                data.message ||
+                'ZCAD не ответил'
+            );
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            '[RandomLine] Ошибка ping:',
+            error
+        );
+
+
+        setConnectionStatus(
+            'disconnected',
+            'ZCAD: не доступен'
+        );
+
+        addLog(
+            'error',
+            `Ошибка ping: ${error.message}`
+        );
+
+    }
+}
 
     /**
      * Обновление статуса соединения
