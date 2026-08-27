@@ -456,102 +456,89 @@ function generateRandomLines(count, minCoord, maxCoord, seed) {
     /**
  * Отправка запроса на HTTP сервер ZCAD
  */
-async function sendDrawRequest(params) {
+/**
+ * Отправка HTTP IPC команды в ZCAD
+ *
+ * Формат:
+ *
+ * POST /ipc
+ *
+ * {
+ *   id:  "...",
+ *   cmd: "BEGIN_BATCH",
+ *   args: []
+ * }
+ */
+async function sendIPCCommand(flaskUrl, command, args = []) {
 
-    const url = `${params.flaskUrl}/ipc`;
+    const baseUrl =
+        flaskUrl.replace(/\/+$/, '');
 
-    const controller = new AbortController();
+    const url =
+        `${baseUrl}/ipc`;
 
-    const timeoutId = setTimeout(
-        () => controller.abort(),
-        CONFIG.requestTimeout
+    const controller =
+        new AbortController();
+
+    const timeoutId =
+        setTimeout(
+            () => controller.abort(),
+            CONFIG.requestTimeout
+        );
+
+    const commandId =
+        'randomline-' +
+        Date.now() +
+        '-' +
+        Math.random()
+            .toString(36)
+            .substring(2, 8);
+
+    const requestBody = {
+
+        id: commandId,
+
+        cmd: command,
+
+        args: args
+
+    };
+
+
+    console.log(
+        '[RandomLine] IPC POST:',
+        url
     );
+
+    console.log(
+        '[RandomLine] IPC command:',
+        command
+    );
+
+    console.log(
+        '[RandomLine] IPC ID:',
+        commandId
+    );
+
 
     try {
 
-        /*
-         * Генерируем линии непосредственно в Widget.
-         */
-        const lines = generateRandomLines(
-            params.count,
-            params.minCoord,
-            params.maxCoord,
-            params.seed
-        );
+        const response =
+            await fetch(url, {
 
+                method: 'POST',
 
-        /*
-         * Уникальный ID команды.
-         */
-        const commandId =
-            'randomline-' +
-            Date.now() +
-            '-' +
-            Math.random()
-                .toString(36)
-                .substring(2, 8);
+                headers: {
+                    'Content-Type': 'application/json'
+                },
 
+                body:
+                    JSON.stringify(requestBody),
 
-        /*
-         * Формат точно соответствует
-         * uzvhttpipc.pas / uzvipcintegration.pas:
-         *
-         * {
-         *   id: "...",
-         *   cmd: "BATCH_LINES",
-         *   args: [
-         *     [
-         *       [x1,y1,x2,y2],
-         *       ...
-         *     ]
-         *   ]
-         * }
-         */
-        const requestBody = {
+                signal:
+                    controller.signal
 
-            id: commandId,
-
-            cmd: 'BATCH_LINES',
-
-            args: [
-                lines
-            ]
-
-        };
-
-
-        console.log(
-            '[RandomLine] POST:',
-            url
-        );
-
-        console.log(
-            '[RandomLine] Command ID:',
-            commandId
-        );
-
-        console.log(
-            '[RandomLine] Lines:',
-            lines.length
-        );
-
-
-        const response = await fetch(url, {
-
-            method: 'POST',
-
-            headers: {
-                'Content-Type': 'application/json'
-            },
-
-            body: JSON.stringify(requestBody),
-
-            signal: controller.signal
-
-        });
-
-
-        clearTimeout(timeoutId);
+            });
 
 
         if (!response.ok) {
@@ -568,30 +555,341 @@ async function sendDrawRequest(params) {
 
 
         console.log(
-            '[RandomLine] Получен ответ:',
+            `[RandomLine] ${command} response:`,
             result
         );
 
 
+        if (
+            !result ||
+            typeof result !== 'object'
+        ) {
+
+            throw new Error(
+                `ZCAD вернул некорректный ответ на ${command}`
+            );
+
+        }
+
+
+        if (result.status !== 'ok') {
+
+            throw new Error(
+                result.error ||
+                result.message ||
+                `Команда ${command} завершилась ошибкой`
+            );
+
+        }
+
+
         return result;
 
+
     } catch (error) {
-
-        clearTimeout(timeoutId);
-
 
         if (error.name === 'AbortError') {
 
             throw new Error(
-                'Превышено время ожидания ответа от ZCAD'
+                `Превышено время ожидания команды ${command}`
             );
 
         }
 
 
         throw new Error(
-            `Ошибка соединения: ${error.message}`
+            `Ошибка IPC ${command}: ${error.message}`
         );
+
+    } finally {
+
+        clearTimeout(timeoutId);
+
+    }
+
+}
+
+
+/**
+ * Отправка BATCH_LINES через HTTP IPC
+ *
+ * Важно:
+ *
+ * BEGIN_BATCH
+ *      ↓
+ * BATCH_LINES
+ *      ↓
+ * END_BATCH
+ *
+ * Все три команды выполняются последовательно.
+ */
+async function sendDrawRequest(params) {
+
+    /*
+     * Генерируем линии непосредственно в Widget.
+     */
+    const lines =
+        generateRandomLines(
+            params.count,
+            params.minCoord,
+            params.maxCoord,
+            params.seed
+        );
+
+
+    console.log(
+        '[RandomLine] Сгенерировано линий:',
+        lines.length
+    );
+
+
+    /*
+     * ===============================================================
+     * 1. BEGIN_BATCH
+     * ===============================================================
+     */
+
+    console.log(
+        '[RandomLine] BEGIN_BATCH'
+    );
+
+
+    showProgress(
+        25,
+        'Начало batch-операции...'
+    );
+
+
+    addLog(
+        'info',
+        'BEGIN_BATCH'
+    );
+
+
+    try {
+
+        const beginResponse =
+            await sendIPCCommand(
+                params.flaskUrl,
+                'BEGIN_BATCH',
+                []
+            );
+
+
+        console.log(
+            '[RandomLine] BEGIN_BATCH OK:',
+            beginResponse
+        );
+
+
+        addLog(
+            'success',
+            'Batch режим запущен'
+        );
+
+
+    } catch (error) {
+
+        addLog(
+            'error',
+            `BEGIN_BATCH: ${error.message}`
+        );
+
+        throw error;
+
+    }
+
+
+    /*
+     * ===============================================================
+     * 2. BATCH_LINES
+     * ===============================================================
+     */
+
+    console.log(
+        '[RandomLine] BATCH_LINES:',
+        lines.length
+    );
+
+
+    showProgress(
+        50,
+        `Отправка ${formatNumber(lines.length)} линий...`
+    );
+
+
+    addLog(
+        'info',
+        `BATCH_LINES: ${lines.length} линий`
+    );
+
+
+    try {
+
+        const batchResponse =
+            await sendIPCCommand(
+                params.flaskUrl,
+                'BATCH_LINES',
+                [
+                    lines
+                ]
+            );
+
+
+        console.log(
+            '[RandomLine] BATCH_LINES OK:',
+            batchResponse
+        );
+
+
+        addLog(
+            'success',
+            batchResponse.result ||
+            `Создано ${lines.length} линий`
+        );
+
+
+    } catch (error) {
+
+        /*
+         * BEGIN_BATCH уже выполнен.
+         *
+         * BATCH_LINES завершился ошибкой.
+         *
+         * Пытаемся обязательно закрыть batch.
+         */
+        console.error(
+            '[RandomLine] Ошибка BATCH_LINES:',
+            error
+        );
+
+
+        addLog(
+            'error',
+            `BATCH_LINES: ${error.message}`
+        );
+
+
+        /*
+         * Здесь намеренно пытаемся выполнить END_BATCH.
+         *
+         * Это необходимо, чтобы FBatchMode
+         * не остался активным в ZCAD.
+         */
+        try {
+
+            await sendIPCCommand(
+                params.flaskUrl,
+                'END_BATCH',
+                []
+            );
+
+
+            addLog(
+                'info',
+                'Batch режим закрыт после ошибки'
+            );
+
+        } catch (endError) {
+
+            console.error(
+                '[RandomLine] Ошибка END_BATCH после ошибки:',
+                endError
+            );
+
+
+            addLog(
+                'error',
+                `END_BATCH: ${endError.message}`
+            );
+
+        }
+
+
+        throw error;
+
+    }
+
+
+    /*
+     * ===============================================================
+     * 3. END_BATCH
+     * ===============================================================
+     */
+
+    console.log(
+        '[RandomLine] END_BATCH'
+    );
+
+
+    showProgress(
+        80,
+        'Завершение batch-операции...'
+    );
+
+
+    addLog(
+        'info',
+        'END_BATCH'
+    );
+
+
+    try {
+
+        const endResponse =
+            await sendIPCCommand(
+                params.flaskUrl,
+                'END_BATCH',
+                []
+            );
+
+
+        console.log(
+            '[RandomLine] END_BATCH OK:',
+            endResponse
+        );
+
+
+        addLog(
+            'success',
+            endResponse.result ||
+            'Batch успешно завершён'
+        );
+
+
+        /*
+         * Возвращаем единый результат,
+         * который использует handleDraw().
+         */
+        return {
+
+            status: 'ok',
+
+            id:
+                endResponse.id,
+
+            result:
+                endResponse.result ||
+                `Создано ${lines.length} линий`
+
+        };
+
+
+    } catch (error) {
+
+        console.error(
+            '[RandomLine] Ошибка END_BATCH:',
+            error
+        );
+
+
+        addLog(
+            'error',
+            `END_BATCH: ${error.message}`
+        );
+
+
+        throw error;
 
     }
 
