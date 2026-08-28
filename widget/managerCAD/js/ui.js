@@ -6,26 +6,30 @@
 const UIModule = {
   // Элементы DOM
   elements: {
-    calcButton: null,
+    sendInsertDevButton: null,
     calcGroupsButton: null,
     calcPowerButton: null,
     statusMessage: null,
     progressInfo: null,
     progressFill: null,
-    progressText: null
+    progressText: null,
+    jsonOutput: null,
+    jsonContent: null
   },
 
   /**
    * Инициализирует элементы UI
    */
   init() {
-    this.elements.calcButton = document.getElementById('calc-paths-btn');
+    this.elements.sendInsertDevButton = document.getElementById('send-insert-dev-btn');
     this.elements.calcGroupsButton = document.getElementById('calc-groups-btn');
     this.elements.calcPowerButton = document.getElementById('calc-power-btn');
     this.elements.statusMessage = document.getElementById('status-message');
     this.elements.progressInfo = document.getElementById('progress-info');
     this.elements.progressFill = document.getElementById('progress-fill');
     this.elements.progressText = document.getElementById('progress-text');
+    this.elements.jsonOutput = document.getElementById('json-output');
+    this.elements.jsonContent = document.getElementById('json-content');
   },
 
   /**
@@ -76,17 +80,17 @@ const UIModule = {
   },
 
   /**
-   * Блокирует кнопку расчёта путей
+   * Блокирует кнопку отправки INSERT_DEV
    */
-  disableButton() {
-    this.elements.calcButton.disabled = true;
+  disableSendInsertDevButton() {
+    this.elements.sendInsertDevButton.disabled = true;
   },
 
   /**
-   * Разблокирует кнопку расчёта путей
+   * Разблокирует кнопку отправки INSERT_DEV
    */
-  enableButton() {
-    this.elements.calcButton.disabled = false;
+  enableSendInsertDevButton() {
+    this.elements.sendInsertDevButton.disabled = false;
   },
 
   /**
@@ -121,7 +125,7 @@ const UIModule = {
    * Блокирует все кнопки
    */
   disableAllButtons() {
-    this.disableButton();
+    this.disableSendInsertDevButton();
     this.disableGroupsButton();
     this.disablePowerButton();
   },
@@ -130,17 +134,17 @@ const UIModule = {
    * Разблокирует все кнопки
    */
   enableAllButtons() {
-    this.enableButton();
+    this.enableSendInsertDevButton();
     this.enableGroupsButton();
     this.enablePowerButton();
   },
 
   /**
-   * Устанавливает обработчик клика на кнопку расчёта путей
+   * Устанавливает обработчик клика на кнопку отправки INSERT_DEV
    * @param {Function} handler - Функция-обработчик
    */
-  setButtonHandler(handler) {
-    this.elements.calcButton.addEventListener('click', handler);
+  setSendInsertDevButtonHandler(handler) {
+    this.elements.sendInsertDevButton.addEventListener('click', handler);
   },
 
   /**
@@ -157,5 +161,22 @@ const UIModule = {
    */
   setPowerButtonHandler(handler) {
     this.elements.calcPowerButton.addEventListener('click', handler);
+  },
+
+  /**
+   * Показывает JSON в окне вывода
+   * @param {Object} jsonData - Объект JSON для отображения
+   */
+  showJsonOutput(jsonData) {
+    const jsonString = JSON.stringify(jsonData, null, 2);
+    this.elements.jsonContent.textContent = jsonString;
+    this.elements.jsonOutput.style.display = 'block';
+  },
+
+  /**
+   * Скрывает окно вывода JSON
+   */
+  hideJsonOutput() {
+    this.elements.jsonOutput.style.display = 'none';
   }
 };
