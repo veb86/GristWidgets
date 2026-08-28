@@ -22,22 +22,38 @@
     var writeQueue = Promise.resolve();
 
     /** Загружает InsertDev и уникальные таблицы-источники. */
-    async function load() {
-      var parameters = DataUtils.toRows(await gristApi.docApi.fetchTable(TABLE_NAME));
-      parameters = DataUtils.sortParameters(parameters);
-      var names = DataUtils.sourceNames(parameters);
-      var sources = new Map();
-      var errors = new Map();
-      await Promise.all(names.map(async function(name) {
-        try {
-          sources.set(name, DataUtils.toRows(await gristApi.docApi.fetchTable(name)));
-        } catch (error) {
-          console.error('[BDInsertDev] Не удалось загрузить ' + name, error);
-          errors.set(name, missingTableMessage(name));
-        }
-      }));
-      return { parameters: parameters, sources: sources, errors: errors };
-    }
+	async function load() {
+	  var tables = await gristApi.docApi.listTables();
+
+	  console.log('[BDInsertDev] Доступные tableId:', tables);
+
+	  var parameters = DataUtils.toRows(
+		await gristApi.docApi.fetchTable(TABLE_NAME)
+	  );
+
+	  parameters = DataUtils.sortParameters(parameters);
+	  var names = DataUtils.sourceNames(parameters);
+	  var sources = new Map();
+	  var errors = new Map();
+
+	  await Promise.all(names.map(async function(name) {
+		try {
+		  sources.set(
+			name,
+			DataUtils.toRows(await gristApi.docApi.fetchTable(name))
+		  );
+		} catch (error) {
+		  console.error('[BDInsertDev] Не удалось загрузить ' + name, error);
+		  errors.set(name, missingTableMessage(name));
+		}
+	  }));
+
+	  return {
+		parameters: parameters,
+		sources: sources,
+		errors: errors
+	  };
+	}
 
     /** Обновляет нужное поле и очищает остальные value-поля. */
     function update(recordId, type, value) {
