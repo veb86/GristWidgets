@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manager Calc</title>
+  <title>Manager CAD</title>
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -11,10 +11,10 @@
   <div id="control-panel" class="control-panel">
     <h2>Панель расчётов</h2>
 
-    <!-- Кнопка пересчёта путей устройств -->
+    <!-- Кнопка отправки INSERT_DEV JSON -->
     <div class="button-group">
-      <button id="calc-paths-btn" class="calc-button">
-        Пересчитать пути устройств
+      <button id="send-insert-dev-btn" class="calc-button">
+        Отправить INSERT_DEV JSON
       </button>
     </div>
 
@@ -42,8 +42,14 @@
       </div>
       <div id="progress-text" class="progress-text"></div>
     </div>
+    
+    <!-- Окно для отображения JSON -->
+    <div id="json-output" class="json-output" style="display: none;">
+      <h3>Сгенерированный JSON:</h3>
+      <pre id="json-content"></pre>
+    </div>
   </div>
-
+  
   <!-- Загрузка Grist API -->
   <script src="../edittable/grist-plugin-api.js"></script>
 
@@ -54,6 +60,7 @@
   <script src="./js/groupCalculator.js"></script>
   <script src="./js/powerCalculator.js"></script>
   <script src="./js/ui.js"></script>
+  <script src="./js/insertDevGenerator.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>
