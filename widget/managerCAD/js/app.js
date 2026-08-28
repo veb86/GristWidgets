@@ -22,11 +22,11 @@ const App = {
       UIModule.init();
 
       // Устанавливаем обработчики кнопок
-      UIModule.setButtonHandler(() => this.handleCalculatePaths());
+      UIModule.setSendInsertDevButtonHandler(() => this.handleSendInsertDev());
       UIModule.setGroupsButtonHandler(() => this.handleCalculateGroups());
       UIModule.setPowerButtonHandler(() => this.handleCalculatePower());
 
-      console.log('Виджет managerCalc успешно инициализирован');
+      console.log('Виджет managerCAD успешно инициализирован');
     } catch (error) {
       console.error('Ошибка инициализации виджета:', error);
       UIModule.showStatus(
@@ -54,120 +54,44 @@ const App = {
   },
 
   /**
-   * Обработчик нажатия кнопки "Пересчитать пути устройств"
+   * Обработчик нажатия кнопки "Отправить INSERT_DEV JSON"
    */
-  async handleCalculatePaths() {
+  async handleSendInsertDev() {
     try {
-      console.log('handleCalculatePaths: начало обработки');
+      console.log('handleSendInsertDev: начало обработки');
 
-      // Блокируем обе кнопки во время расчёта
+      // Блокируем все кнопки во время генерации
       UIModule.disableAllButtons();
       UIModule.hideStatus();
-      UIModule.showProgress();
+      UIModule.hideJsonOutput();
 
-      // Загружаем данные из таблицы
-      UIModule.updateProgress(0, 0, 0);
-      console.log('handleCalculatePaths: загрузка данных из таблицы...');
-      const rawData = await DataModule.loadAllDevices();
-      console.log('handleCalculatePaths: данные загружены, количество записей:', rawData?.id?.length || 0);
+      console.log('handleSendInsertDev: генерация INSERT_DEV JSON...');
+      
+      // Генерируем INSERT_DEV JSON
+      const insertDevArray = await InsertDevGenerator.sendInsertDevToGrist();
+      
+      console.log('handleSendInsertDev: JSON сгенерирован, количество записей:', insertDevArray.length);
 
-      // Преобразуем данные в удобный формат
-      console.log('handleCalculatePaths: преобразование данных...');
-      const devices = DataModule.transformTableData(rawData);
-      console.log('handleCalculatePaths: преобразование завершено, количество устройств:', devices.length);
-
-      if (devices.length === 0) {
-        console.log('handleCalculatePaths: таблица пуста');
-        UIModule.showStatus('Таблица AllDevice пуста', 'info');
-        UIModule.hideProgress();
-        UIModule.enableAllButtons();
-        return;
-      }
-
-      // Валидация данных
-      console.log('handleCalculatePaths: валидация данных...');
-      const validation = PathCalculator.validateData(devices);
-
-      if (!validation.isValid) {
-        const errorMessage = 'Обнаружены ошибки в данных:\n' +
-          validation.errors.join('\n');
-        UIModule.showStatus(errorMessage, 'error');
-        UIModule.hideProgress();
-        UIModule.enableAllButtons();
-        console.error('Ошибки валидации:', validation.errors);
-        return;
-      }
-
-      console.log('handleCalculatePaths: валидация прошла успешно');
-
-      // Рассчитываем пути для всех устройств
-      console.log('handleCalculatePaths: начало расчета путей...');
-      const updates = PathCalculator.calculateAllPaths(
-        devices,
-        (percent, current, total) => {
-          console.log(`handleCalculatePaths: прогресс расчета - ${percent}% (${current}/${total})`);
-          UIModule.updateProgress(percent, current, total);
-        }
-      );
-      console.log('handleCalculatePaths: расчет завершен, найдено обновлений:', updates.length);
-
-      // Если нет изменений
-      if (updates.length === 0) {
-        console.log('handleCalculatePaths: нет изменений для обновления');
-        UIModule.showStatus(
-          'Все пути уже актуальны, обновление не требуется',
-          'info'
-        );
-        UIModule.hideProgress();
-        UIModule.enableAllButtons();
-        return;
-      }
-
-      // Обновляем данные в таблице пакетами
-      console.log('handleCalculatePaths: применение обновлений...');
-      await this.applyUpdatesInBatches(updates);
-      console.log('handleCalculatePaths: обновления применены');
+      // Показываем JSON в окне вывода
+      UIModule.showJsonOutput(insertDevArray);
 
       // Показываем сообщение об успехе
       UIModule.showStatus(
-        `Успешно обновлено путей: ${updates.length} из ${devices.length}`,
+        `Успешно сгенерировано INSERT_DEV записей: ${insertDevArray.length}`,
         'success'
       );
 
-      console.log(`Расчёт завершён. Обновлено записей: ${updates.length}`);
+      console.log('handleSendInsertDev: обработка завершена');
     } catch (error) {
-      console.error('Ошибка при расчёте путей:', error);
+      console.error('Ошибка при генерации INSERT_DEV:', error);
       UIModule.showStatus(
         `Ошибка: ${error.message}`,
         'error'
       );
     } finally {
-      // Разблокируем кнопки и скрываем прогресс
-      UIModule.hideProgress();
+      // Разблокируем кнопки
       UIModule.enableAllButtons();
-      console.log('handleCalculatePaths: завершение обработки');
-    }
-  },
-
-  /**
-   * Применяет обновления к таблице пакетами
-   * @param {Array<Object>} updates - Массив обновлений
-   * @returns {Promise<void>}
-   */
-  async applyUpdatesInBatches(updates) {
-    const totalBatches = Math.ceil(updates.length / CONFIG.BATCH_SIZE);
-
-    for (let i = 0; i < totalBatches; i++) {
-      const start = i * CONFIG.BATCH_SIZE;
-      const end = Math.min(start + CONFIG.BATCH_SIZE, updates.length);
-      const batch = updates.slice(start, end);
-
-      await DataModule.updateDevicePathsBatch(batch);
-
-      // Небольшая задержка между пакетами
-      if (i < totalBatches - 1) {
-        await this.delay(CONFIG.UPDATE_DELAY);
-      }
+      console.log('handleSendInsertDev: завершение обработки');
     }
   },
 
@@ -176,7 +100,7 @@ const App = {
    */
   async handleCalculateGroups() {
     try {
-      // Блокируем обе кнопки во время расчёта
+      // Блокируем все кнопки во время расчёта
       UIModule.disableAllButtons();
       UIModule.hideStatus();
       UIModule.showProgress();
