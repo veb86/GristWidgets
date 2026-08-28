@@ -65,25 +65,24 @@ const App = {
       UIModule.hideStatus();
       UIModule.hideJsonOutput();
 
-      console.log('handleSendInsertDev: генерация INSERT_DEV JSON...');
+      console.log('handleSendInsertDev: отправка INSERT_DEV на сервер...');
       
-      // Генерируем INSERT_DEV JSON
-      const insertDevArray = await InsertDevGenerator.sendInsertDevToGrist();
+      // Отправляем INSERT_DEV на сервер
+      const result = await InsertDevGenerator.sendInsertDevToServer();
       
-      console.log('handleSendInsertDev: JSON сгенерирован, количество записей:', insertDevArray.length);
+      console.log('handleSendInsertDev: ответ от сервера:', result);
 
-      // Показываем JSON в окне вывода
-      UIModule.showJsonOutput(insertDevArray);
-
-      // Показываем сообщение об успехе
-      UIModule.showStatus(
-        `Успешно сгенерировано INSERT_DEV записей: ${insertDevArray.length}`,
-        'success'
-      );
-
-      console.log('handleSendInsertDev: обработка завершена');
+      // Проверяем результат
+      if (result && result.status === 'ok') {
+        // Показываем сообщение об успехе
+        const successMessage = result.result || result.message || 'Успешно отправлено в ZCAD';
+        UIModule.showStatus(successMessage, 'success');
+        console.log('handleSendInsertDev: операция успешно завершена');
+      } else {
+        throw new Error(result?.error || result?.message || 'Неизвестная ошибка ZCAD');
+      }
     } catch (error) {
-      console.error('Ошибка при генерации INSERT_DEV:', error);
+      console.error('Ошибка при отправке INSERT_DEV:', error);
       UIModule.showStatus(
         `Ошибка: ${error.message}`,
         'error'
