@@ -255,12 +255,12 @@ const InsertDevGenerator = {
   },
 
   /**
-   * Отправляет INSERT_DEV JSON в Grist
-   * @returns {Promise<void>}
+   * Отправляет INSERT_DEV JSON на сервер ZCAD через /ipc
+   * @returns {Promise<Object>} Результат отправки
    */
-  async sendInsertDevToGrist() {
+  async sendInsertDevToServer() {
     try {
-      console.log('InsertDevGenerator: отправка INSERT_DEV JSON в Grist...');
+      console.log('InsertDevGenerator: отправка INSERT_DEV JSON на сервер...');
       
       const insertDevArray = await this.generateInsertDevJSON();
       
@@ -268,13 +268,53 @@ const InsertDevGenerator = {
         throw new Error('Нет данных для отправки. Таблица SelDevices пуста.');
       }
       
-      // Создаем UserAction для добавления записей
-      // Предполагаем что есть таблица для получения INSERT_DEV данных
-      // Для демонстрации просто возвращаем JSON
+      // Формируем команду для IPC
+      const commandId = 'insertdev-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
       
-      console.log('InsertDevGenerator: готовый JSON:', JSON.stringify(insertDevArray, null, 2));
+      const requestBody = {
+        id: commandId,
+        cmd: 'INSERT_DEV',
+        args: insertDevArray
+      };
       
-      return insertDevArray;
+      console.log('InsertDevGenerator: отправка команды:', requestBody);
+      
+      // Используем текущий origin для отправки
+      const url = window.location.origin + '/ipc';
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        console.log('InsertDevGenerator: получен ответ:', result);
+        
+        return result;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+          throw new Error('Превышено время ожидания ответа от ZCAD');
+        }
+        
+        throw new Error(`Ошибка соединения: ${error.message}`);
+      }
     } catch (error) {
       console.error('InsertDevGenerator: ошибка при отправке INSERT_DEV:', error);
       throw error;
