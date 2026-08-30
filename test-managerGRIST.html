@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test managerGRIST Widget</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    .status { padding: 10px; background: #f0f0f0; border-radius: 4px; margin: 10px 0; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    .log { background: #000; color: #0f0; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    .success { color: #28a745; }
+    .error { color: #dc3545; }
+    iframe { width: 100%; height: 500px; border: 2px solid #333; }
+  </style>
+</head>
+<body>
+  <h1>Test managerGRIST Widget</h1>
+  
+  <div class="test-section">
+    <h2>Widget Preview</h2>
+    <iframe id="widget-frame" src="./widget/managerGRIST/index.html"></iframe>
+  </div>
+  
+  <div class="test-section">
+    <h2>ZCAD Server Simulation</h2>
+    <p>Эти кнопки симулируют ответы ZCAD сервера для тестирования виджета.</p>
+    
+    <div class="status">
+      <strong>Status:</strong>
+      <span id="server-status">Server not started</span>
+    </div>
+    
+    <button onclick="startMockServer()">Start Mock ZCAD Server</button>
+    <button onclick="stopMockServer()">Stop Mock Server</button>
+    <button onclick="sendCommands()">Send Test Commands</button>
+    <button onclick="clearCommands()">Clear Command Queue</button>
+  </div>
+  
+  <div class="test-section">
+    <h2>Event Log</h2>
+    <div id="log" class="log"></div>
+  </div>
+  
+  <script>
+    // Mock ZCAD server state
+    let mockServer = null;
+    let commandQueue = [];
+    let commandIdCounter = 1000;
+    let ackedCommands = new Set();
+    
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = type;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.insertBefore(entry, logEl.firstChild);
+    }
+    
+    function startMockServer() {
+      if (mockServer) {
+        log('Mock server already running', 'error');
+        return;
+      }
+      
+      // Создаем mock server через Service Worker или просто эмулируем fetch
+      mockServer = {
+        commands: [],
+        ackedIds: new Set()
+      };
+      
+      document.getElementById('server-status').textContent = 'Mock server running on http://127.0.0.1:5000';
+      document.getElementById('server-status').className = 'success';
+      log('Mock ZCAD server started');
+      
+      // Перехватываем fetch запросы от iframe
+      interceptFetch();
+    }
+    
+    function stopMockServer() {
+      mockServer = null;
+      document.getElementById('server-status').textContent = 'Server stopped';
+      document.getElementById('server-status').className = '';
+      log('Mock ZCAD server stopped');
+    }
+    
+    function sendCommands() {
+      if (!mockServer) {
+        log('Start mock server first', 'error');
+        return;
+      }
+      
+      const commands = [
+        {
+          id: commandIdCounter++,
+          command: 'SET_GRIST_VALUE',
+          args: {
+            table: 'TestTable',
+            recordId: 1,
+            field: 'Name',
+            value: 'Test Value ' + new Date().toISOString()
+          }
+        },
+        {
+          id: commandIdCounter++,
+          command: 'UPDATE_GRIST_RECORD',
+          args: {
+            table: 'TestTable',
+            recordId: 2,
+            fields: { Status: 'Active' }
+          }
+        }
+      ];
+      
+      mockServer.commands.push(...commands);
+      log(`Added ${commands.length} commands to mock queue`);
+    }
+    
+    function clearCommands() {
+      if (mockServer) {
+        mockServer.commands = [];
+        log('Command queue cleared');
+      }
+    }
+    
+    function interceptFetch() {
+      // Сохраняем оригинальный fetch
+      const originalFetch = window.fetch;
+      
+      window.fetch = function(url, options) {
+        const urlString = url.toString();
+        
+        // Проверяем если это запрос к нашему mock серверу
+        if (urlString.includes('127.0.0.1:5000/grist/poll') || 
+            urlString.includes('127.0.0.1:5000/grist/ack') ||
+            urlString.includes('127.0.0.1:5000/ipc')) {
+          
+          return handleMockRequest(urlString, options);
+        }
+        
+        // Иначе используем оригинальный fetch
+        return originalFetch.apply(this, arguments);
+      };
+      
+      log('Fetch interceptor installed for mock server');
+    }
+    
+    function handleMockRequest(url, options) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (url.includes('/grist/poll')) {
+            handlePoll(resolve, reject);
+          } else if (url.includes('/grist/ack')) {
+            handleAck(resolve, reject, options);
+          } else if (url.includes('/ipc')) {
+            handleIpc(resolve, reject, options);
+          }
+        }, 50); // Небольшая задержка для реалистичности
+      });
+    }
+    
+    function handlePoll(resolve, reject) {
+      if (!mockServer) {
+        reject(new Error('Server not running'));
+        return;
+      }
+      
+      const commands = mockServer.commands.splice(0, 10); // Возвращаем до 10 команд
+      
+      const response = {
+        ok: true,
+        commands: commands
+      };
+      
+      log(`POLL: returning ${commands.length} commands`, 'info');
+      
+      resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(response)
+      });
+    }
+    
+    function handleAck(resolve, reject, options) {
+      if (!mockServer) {
+        reject(new Error('Server not running'));
+        return;
+      }
+      
+      options.json().then(data => {
+        mockServer.ackedIds.add(data.id);
+        log(`ACK received for command id: ${data.id}`, 'success');
+        
+        resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ ok: true })
+        });
+      });
+    }
+    
+    function handleIpc(resolve, reject, options) {
+      log('IPC request received (INSERT_DEV)', 'info');
+      
+      resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: 'ok', message: 'IPC command processed' })
+      });
+    }
+    
+    // Auto-start mock server on page load for convenience
+    window.addEventListener('load', () => {
+      log('Test page loaded. Click "Start Mock ZCAD Server" to begin testing.');
+    });
+  </script>
+</body>
+</html>
