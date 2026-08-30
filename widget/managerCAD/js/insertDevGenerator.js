@@ -207,12 +207,8 @@ const InsertDevGenerator = {
     // Получаем константы трансформации
     const { x, y, scaleX, scaleY, rotate } = this.TRANSFORM_CONSTANTS;
     
-    // Получаем дополнительные параметры из InsertDev
-    const insertDevParams = this.getInsertDevParams(tables.insertDev);
-    console.log('InsertDevGenerator: дополнительные параметры InsertDev:', insertDevParams.length);
-    
-    // Формируем массив INSERT_DEV для каждой строки SelDevices
-    const insertDevArray = [];
+    // Собираем ВСЕ параметры спецификаций в один общий массив
+    const allSpecParams = [];
     const devices = tables.selDevices.id || [];
     
     for (let i = 0; i < devices.length; i++) {
@@ -231,27 +227,31 @@ const InsertDevGenerator = {
       // rowIndex начинается с 1
       const specParams = this.buildSpecificationParams(deviceRow, tables.selDevicesSet, i + 1);
       
-      // Объединяем параметры спецификации с параметрами InsertDev
-      const allParams = [...specParams, ...insertDevParams];
-      
-      // Формируем INSERT_DEV запись
-      const insertDevRecord = [
-        deviceName,
-        x,
-        y,
-        scaleX,
-        scaleY,
-        rotate,
-        allParams
-      ];
-      
-      insertDevArray.push(insertDevRecord);
-      console.log('InsertDevGenerator: сформирована запись INSERT_DEV для устройства', deviceRow.name);
+      // Добавляем параметры этого устройства в общий массив
+      allSpecParams.push(...specParams);
     }
     
-    console.log('InsertDevGenerator: генерация завершена, всего записей:', insertDevArray.length);
+    // Получаем дополнительные параметры из InsertDev (один раз для всех)
+    const insertDevParams = this.getInsertDevParams(tables.insertDev);
+    console.log('InsertDevGenerator: дополнительные параметры InsertDev:', insertDevParams.length);
     
-    return insertDevArray;
+    // Объединяем все параметры спецификаций с параметрами InsertDev
+    const allParams = [...allSpecParams, ...insertDevParams];
+    
+    // Формируем ЕДИНУЮ запись INSERT_DEV со всеми параметрами
+    const insertDevRecord = [
+      deviceName,
+      x,
+      y,
+      scaleX,
+      scaleY,
+      rotate,
+      allParams
+    ];
+    
+    console.log('InsertDevGenerator: сформирована запись INSERT_DEV с', allParams.length, 'параметрами');
+    
+    return insertDevRecord;
   },
 
   /**
@@ -262,9 +262,9 @@ const InsertDevGenerator = {
     try {
       console.log('InsertDevGenerator: отправка INSERT_DEV JSON на сервер...');
       
-      const insertDevArray = await this.generateInsertDevJSON();
+      const insertDevRecord = await this.generateInsertDevJSON();
       
-      if (insertDevArray.length === 0) {
+      if (!insertDevRecord || insertDevRecord.length === 0) {
         throw new Error('Нет данных для отправки. Таблица SelDevices пуста.');
       }
       
@@ -274,7 +274,7 @@ const InsertDevGenerator = {
       const requestBody = {
         id: commandId,
         cmd: 'INSERT_DEV',
-        args: insertDevArray
+        args: insertDevRecord
       };
       
       console.log('InsertDevGenerator: отправка команды:', requestBody);
