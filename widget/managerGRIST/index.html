@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>managerGRIST - ZCAD Command Processor</title>
+  <style>
+    /* Минимальные стили для виджета */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+      background-color: #f5f5f5;
+    }
+    
+    .status-panel {
+      background: white;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .status-label {
+      color: #666;
+    }
+    
+    .status-value {
+      font-weight: bold;
+    }
+    
+    .status-online {
+      color: #28a745;
+    }
+    
+    .status-offline {
+      color: #dc3545;
+    }
+    
+    .log-container {
+      background: white;
+      border-radius: 4px;
+      padding: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .log-entry {
+      font-family: monospace;
+      font-size: 12px;
+      padding: 2px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .log-entry.error {
+      color: #dc3545;
+    }
+    
+    .log-entry.success {
+      color: #28a745;
+    }
+    
+    .log-entry.info {
+      color: #17a2b8;
+    }
+  </style>
+</head>
+<body>
+  <!-- Панель статуса -->
+  <div class="status-panel">
+    <h3>ManagerGRIST Status</h3>
+    <div class="status-item">
+      <span class="status-label">ZCAD Connection:</span>
+      <span id="zcad-status" class="status-value status-offline">Checking...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Polling Active:</span>
+      <span id="polling-status" class="status-value">-</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Queue Size:</span>
+      <span id="queue-status" class="status-value">0</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Registered Commands:</span>
+      <span id="commands-status" class="status-value">0</span>
+    </div>
+  </div>
+  
+  <!-- Лог событий -->
+  <div class="log-container">
+    <h4>Event Log</h4>
+    <div id="event-log"></div>
+  </div>
+  
+  <!-- Загрузка Grist API -->
+  <script src="../edittable/grist-plugin-api.js"></script>
+  
+  <!-- Конфигурация -->
+  <script src="./config.js"></script>
+  
+  <!-- Утилиты -->
+  <script src="./utils/http.js"></script>
+  <script src="./utils/grist-api.js"></script>
+  <script src="./utils/validation.js"></script>
+  
+  <!-- Command Registry -->
+  <script src="./commands/command-registry.js"></script>
+  
+  <!-- Команды (саморегистрируются в Registry) -->
+  <script src="./commands/insert-dev.js"></script>
+  <script src="./commands/set-grist-value.js"></script>
+  <script src="./commands/update-grist-record.js"></script>
+  <script src="./commands/delete-grist-record.js"></script>
+  
+  <!-- Communication modules -->
+  <script src="./communication/zcad-poll.js"></script>
+  <script src="./communication/zcad-ack.js"></script>
+  
+  <!-- Command Queue -->
+  <script src="./command-queue.js"></script>
+  
+  <!-- Polling Loop -->
+  <script src="./polling-loop.js"></script>
+  
+  <!-- Главный модуль -->
+  <script src="./manager.js"></script>
+  
+  <!-- UI обновления статуса -->
+  <script>
+    // Простой модуль для обновления UI статуса
+    const StatusUI = {
+      updateInterval: null,
+      
+      init() {
+        this.updateInterval = setInterval(() => this.update(), 1000);
+        this.log('StatusUI initialized', 'info');
+      },
+      
+      update() {
+        if (typeof ManagerGRIST !== 'undefined') {
+          const status = ManagerGRIST.getStatus();
+          
+          // Обновляем статус ZCAD
+          const zcadEl = document.getElementById('zcad-status');
+          if (zcadEl) {
+            const isOnline = status.polling.isOnline;
+            zcadEl.textContent = isOnline ? 'ONLINE' : 'OFFLINE';
+            zcadEl.className = `status-value ${isOnline ? 'status-online' : 'status-offline'}`;
+          }
+          
+          // Обновляем статус polling
+          const pollingEl = document.getElementById('polling-status');
+          if (pollingEl) {
+            pollingEl.textContent = status.polling.isRunning ? 'Yes' : 'No';
+          }
+          
+          // Обновляем размер очереди
+          const queueEl = document.getElementById('queue-status');
+          if (queueEl) {
+            queueEl.textContent = status.queueSize;
+          }
+          
+          // Обновляем количество команд
+          const commandsEl = document.getElementById('commands-status');
+          if (commandsEl) {
+            commandsEl.textContent = status.registeredCommands.length;
+          }
+        }
+      },
+      
+      log(message, type = 'info') {
+        const logEl = document.getElementById('event-log');
+        if (!logEl) return;
+        
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        
+        logEl.insertBefore(entry, logEl.firstChild);
+        
+        // Ограничиваем количество записей в логе
+        while (logEl.children.length > 100) {
+          logEl.removeChild(logEl.lastChild);
+        }
+      }
+    };
+    
+    // Запускаем UI после загрузки страницы
+    window.addEventListener('load', () => {
+      StatusUI.init();
+    });
+  </script>
+</body>
+</html>
